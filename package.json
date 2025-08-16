@@ -1,0 +1,55 @@
+{
+  "name": "create-nextjs-mcp",
+  "version": "1.0.0",
+  "description": "MCP server that creates production-ready Next.js SaaS applications with authentication, payments, team management, and complete development setup",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "create-nextjs-mcp": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsc --watch",
+    "global-install": "npm link",
+    "global-uninstall": "npm unlink -g"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "fs-extra": "^11.2.0",
+    "path": "^0.12.7"
+  },
+  "devDependencies": {
+    "@types/fs-extra": "^11.0.4",
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "nextjs",
+    "saas",
+    "starter",
+    "template",
+    "authentication",
+    "stripe",
+    "payments",
+    "drizzle",
+    "typescript",
+    "tailwind",
+    "shadcn-ui",
+    "team-management",
+    "jwt",
+    "postgresql"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/create-nextjs-mcp"
+  },
+  "homepage": "https://github.com/your-username/create-nextjs-mcp#readme",
+  "bugs": {
+    "url": "https://github.com/your-username/create-nextjs-mcp/issues"
+  }
+}

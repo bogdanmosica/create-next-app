@@ -1,0 +1,31 @@
+{
+  "// Add this to your VSCode User Settings (settings.json)": "",
+  "// File -> Preferences -> Settings -> Open Settings (JSON)": "",
+  
+  "claude-code.mcpServers": {
+    "create-nextjs": {
+      "command": "node",
+      "args": ["D:\\Projects\\Model Context Protocols\\create-next-app\\dist\\index.js"],
+      "env": {}
+    }
+  },
+  
+  "// Alternative using global install": "",
+  "// After running: npm link in the MCP server directory": "",
+  "claude-code.mcpServers.alternative": {
+    "create-nextjs": {
+      "command": "create-nextjs-mcp",
+      "args": [],
+      "env": {}
+    }
+  },
+  
+  "// macOS/Linux paths would look like this": "",
+  "claude-code.mcpServers.unix": {
+    "create-nextjs": {
+      "command": "node",
+      "args": ["/Users/username/mcp-servers/create-next-app/dist/index.js"],
+      "env": {}
+    }
+  }
+}

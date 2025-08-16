@@ -1,0 +1,2 @@
+export declare const envTemplate = "POSTGRES_URL=\"\"\n\nSTRIPE_SECRET_KEY=\"\"\nSTRIPE_WEBHOOK_SECRET=\"\"\n\nBASE_URL=http://localhost:3000\nAUTH_SECRET=4dc1b1d64debc9db673f360d3bd4c114e3b6b14fa36d93d5973d0a31b48c319f";
+//# sourceMappingURL=env-template.d.ts.map

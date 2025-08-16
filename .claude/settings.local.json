@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm install:*)",
+      "Bash(pnpm run:*)",
+      "Bash(node:*)",
+      "Bash(npx create-next-app:*)",
+      "Bash(mkdir:*)",
+      "Bash(move:*)",
+      "Bash(mv:*)",
+      "Bash(npm run build:*)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:github.com)"
+    ],
+    "defaultMode": "acceptEdits"
+  }
+}
