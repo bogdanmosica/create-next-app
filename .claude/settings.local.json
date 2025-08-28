@@ -15,7 +15,11 @@
       "Bash(pnpm build:*)",
       "Bash(timeout:*)",
       "WebSearch",
-      "WebFetch(domain:biomejs.dev)"
+      "WebFetch(domain:biomejs.dev)",
+      "Bash(git rm:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git check-ignore:*)"
     ],
     "defaultMode": "acceptEdits",
     "additionalDirectories": [

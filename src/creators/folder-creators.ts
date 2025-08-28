@@ -1,9 +1,19 @@
 import fs from "fs-extra";
 import path from "node:path";
 import { createActionsReadme, createComponentsReadme, createLibReadme, createLibDbReadme } from "./readme-creators.js";
+import {
+  createEnhancedProjectStructure,
+  createLibsStructure,
+  createModelsStructure,
+  createValidationsStructure,
+  createAuthComponents,
+  createAuthPages,
+  createEnhancedAuthActions,
+  createEnhancedStructureReadme,
+} from "./enhanced-structure-creators.js";
 
 export async function createFolderStructure(projectPath: string): Promise<void> {
-  // Create directories
+  // Create base directories (existing structure)
   const folders = [
     "actions",
     "components",
@@ -57,5 +67,39 @@ export async function createFolderStructure(projectPath: string): Promise<void> 
   } catch (error) {
     console.error(`[ERROR] Failed to create README files: ${error}`);
     throw new Error(`Failed to create README files: ${error instanceof Error ? error.message : String(error)}`);
+  }
+
+  // === ENHANCED PROJECT STRUCTURE ===
+  try {
+    console.error(`[DEBUG] Creating enhanced project structure...`);
+    
+    // Create enhanced folder structure
+    await createEnhancedProjectStructure(projectPath);
+    
+    // Create libs structure with utilities
+    await createLibsStructure(projectPath);
+    
+    // Create models structure with database schemas
+    await createModelsStructure(projectPath);
+    
+    // Create validations structure with Zod schemas
+    await createValidationsStructure(projectPath);
+    
+    // Create auth components (login/signup forms)
+    await createAuthComponents(projectPath);
+    
+    // Create auth pages
+    await createAuthPages(projectPath);
+    
+    // Create enhanced auth actions
+    await createEnhancedAuthActions(projectPath);
+    
+    // Create enhanced structure documentation
+    await createEnhancedStructureReadme(projectPath);
+    
+    console.error(`[DEBUG] Enhanced project structure created successfully`);
+  } catch (error) {
+    console.error(`[ERROR] Failed to create enhanced project structure: ${error}`);
+    throw new Error(`Failed to create enhanced project structure: ${error instanceof Error ? error.message : String(error)}`);
   }
 }

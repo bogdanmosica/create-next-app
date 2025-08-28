@@ -22,6 +22,8 @@ This Model Context Protocol (MCP) server automatically creates production-ready 
 
 ### Complete SaaS Application Features
 - ✅ **Authentication System**: JWT + bcrypt password hashing
+- ✅ **Internationalization**: 6 languages with next-intl, dynamic routing
+- ✅ **Enhanced Structure**: libs/, models/, validations/ organization
 - ✅ **Payment Integration**: Stripe checkout, subscriptions, customer portal
 - ✅ **Team Management**: Multi-tenant with role-based permissions
 - ✅ **Database**: PostgreSQL with Drizzle ORM, migrations, seeding
@@ -31,16 +33,37 @@ This Model Context Protocol (MCP) server automatically creates production-ready 
 ### Generated Project Structure
 ```
 your-app/
-├── app/                    # Next.js app directory
-├── actions/                # Server actions with examples
-├── components/             # shadcn/ui components + custom
-├── lib/
+├── app/
+│   └── [locale]/          # Next.js i18n app directory
+│       ├── auth/          # Internationalized auth pages
+│       └── dashboard/     # Protected dashboard routes
+├── actions/               # Server actions with examples
+├── components/
+│   ├── auth/              # Complete login/signup forms
+│   └── ui/                # shadcn/ui + language switcher
+├── libs/                  # Enhanced shared utilities
+│   ├── env.ts             # Type-safe env validation
+│   ├── db.ts              # Database connection
+│   ├── i18n-config.ts     # Internationalization setup
+│   └── utils.ts           # Common utilities
+├── models/                # Database models & schemas
+│   ├── user.ts            # User model with JWT support
+│   ├── team.ts            # Team management models
+│   └── schema.ts          # Drizzle schema exports
+├── validations/           # Zod validation schemas
+│   ├── auth.ts            # Authentication validation
+│   └── team.ts            # Team management validation
+├── locales/               # Translation files
+│   ├── en.json            # English (complete)
+│   ├── es.json            # Spanish (complete)
+│   ├── fr.json            # French (complete)
+│   └── de.json, ja.json, zh.json  # Basic translations
+├── lib/                   # Legacy structure (maintained)
 │   ├── auth/              # JWT session + password handling
-│   ├── db/                # Drizzle schema, queries, migrations
-│   ├── payments/          # Stripe integration
-│   └── constants/         # Shared constants
+│   ├── db/                # Drizzle queries, migrations
+│   └── payments/          # Stripe integration
 ├── types/                 # TypeScript type definitions
-├── middleware.ts          # Route protection middleware
+├── middleware.ts          # i18n + route protection
 ├── .env                   # Environment variables
 └── package.json           # Complete dependencies
 ```
@@ -65,19 +88,23 @@ your-app/
 }
 ```
 
-### Process (24 Steps)
+### Process (30 Steps)
 1. **Next.js Setup**: TypeScript, Tailwind, App Router
 2. **Biome**: Linting and formatting instead of ESLint
 3. **shadcn/ui**: All UI components installed
-4. **Folder Structure**: Organized project layout
+4. **Enhanced Structure**: libs/, models/, validations/ folders
 5. **Drizzle ORM**: PostgreSQL integration
 6. **SaaS Features**: Auth, payments, teams, middleware
 7. **Environment Validation**: T3 Env for type-safe variables
 8. **Form Handling**: React Hook Form with Zod validation
 9. **Testing Setup**: Vitest, Playwright, MSW mocking
 10. **Git Hooks**: Lefthook, lint-staged, Commitizen
-11. **Dependencies**: CLI-based installation of all packages
-12. **Configuration**: Environment files, VSCode settings
+11. **Internationalization**: next-intl with 6 languages
+12. **i18n Routing**: Dynamic [locale] structure
+13. **Translation Files**: Complete locale management
+14. **i18n Components**: Internationalized auth forms
+15. **Dependencies**: CLI-based installation of all packages
+16. **Configuration**: Environment files, VSCode settings
 
 ## Environment Setup (Post-Creation)
 
