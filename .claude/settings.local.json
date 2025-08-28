@@ -10,8 +10,16 @@
       "Bash(mv:*)",
       "Bash(npm run build:*)",
       "WebFetch(domain:github.com)",
-      "WebFetch(domain:github.com)"
+      "WebFetch(domain:github.com)",
+      "Bash(pnpm start:*)",
+      "Bash(pnpm build:*)",
+      "Bash(timeout:*)",
+      "WebSearch",
+      "WebFetch(domain:biomejs.dev)"
     ],
-    "defaultMode": "acceptEdits"
+    "defaultMode": "acceptEdits",
+    "additionalDirectories": [
+      "D:\\Projects\\Model Context Protocols"
+    ]
   }
 }

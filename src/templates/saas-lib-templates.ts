@@ -28,7 +28,7 @@ export function validatedAction<S extends z.ZodType<any, any>, T>(
  return async (prevState: ActionState, formData: FormData) => {
  const result = schema.safeParse(Object.fromEntries(formData));
  if (!result.success) {
- return { error: result.error.errors[0].message };
+ return { error: result.error.issues[0].message };
  }
 
  return action(result.data, formData);
@@ -53,10 +53,31 @@ export function validatedActionWithUser<S extends z.ZodType<any, any>, T>(
 
  const result = schema.safeParse(Object.fromEntries(formData));
  if (!result.success) {
- return { error: result.error.errors[0].message };
+ return { error: result.error.issues[0].message };
  }
 
  return action(result.data, formData, user);
+ };
+}
+
+type TeamActionFunction<T> = (
+ formData: FormData,
+ team: TeamDataWithMembers
+) => Promise<T>;
+
+export function withTeam<T>(action: TeamActionFunction<T>) {
+ return async (formData: FormData) => {
+ const user = await getUser();
+ if (!user) {
+ throw new Error('User is not authenticated');
+ }
+
+ const team = await getTeamForUser(user.id);
+ if (!team) {
+ throw new Error('Team not found for user');
+ }
+
+ return action(formData, team);
  };
 }`;
 
@@ -171,6 +192,55 @@ export async function getUser() {
  }
 
  return user[0];
+}
+
+export async function getTeamForUser(userId: number) {
+ // First get the team
+ const teamResult = await db
+ .select()
+ .from(teams)
+ .innerJoin(teamMembers, eq(teams.id, teamMembers.teamId))
+ .where(eq(teamMembers.userId, userId))
+ .limit(1);
+
+ if (teamResult.length === 0) {
+ return null;
+ }
+
+ const team = teamResult[0].teams;
+
+ // Then get all team members for this team
+ const membersResult = await db
+ .select({
+ id: teamMembers.id,
+ teamId: teamMembers.teamId,
+ userId: teamMembers.userId,
+ role: teamMembers.role,
+ createdAt: teamMembers.createdAt,
+ updatedAt: teamMembers.updatedAt,
+ userName: users.name,
+ userEmail: users.email
+ })
+ .from(teamMembers)
+ .innerJoin(users, eq(teamMembers.userId, users.id))
+ .where(eq(teamMembers.teamId, team.id));
+
+ return {
+ ...team,
+ teamMembers: membersResult.map(member => ({
+ id: member.id,
+ teamId: member.teamId,
+ userId: member.userId,
+ role: member.role,
+ createdAt: member.createdAt,
+ updatedAt: member.updatedAt,
+ user: {
+ id: member.userId,
+ name: member.userName,
+ email: member.userEmail
+ }
+ }))
+ };
 }
 
 export async function getTeamByStripeCustomerId(customerId: string) {
@@ -452,7 +522,7 @@ import {
 } from '@/lib/db/queries';
 
 export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
- apiVersion: '2025-04-30.basil'
+ apiVersion: '2025-08-27.basil'
 });
 
 export async function createCheckoutSession({

@@ -65,15 +65,19 @@ your-app/
 }
 ```
 
-### Process (18 Steps)
+### Process (24 Steps)
 1. **Next.js Setup**: TypeScript, Tailwind, App Router
 2. **Biome**: Linting and formatting instead of ESLint
 3. **shadcn/ui**: All UI components installed
 4. **Folder Structure**: Organized project layout
 5. **Drizzle ORM**: PostgreSQL integration
 6. **SaaS Features**: Auth, payments, teams, middleware
-7. **Dependencies**: All required packages installed
-8. **Configuration**: Environment files, VSCode settings
+7. **Environment Validation**: T3 Env for type-safe variables
+8. **Form Handling**: React Hook Form with Zod validation
+9. **Testing Setup**: Vitest, Playwright, MSW mocking
+10. **Git Hooks**: Lefthook, lint-staged, Commitizen
+11. **Dependencies**: CLI-based installation of all packages
+12. **Configuration**: Environment files, VSCode settings
 
 ## Environment Setup (Post-Creation)
 

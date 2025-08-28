@@ -1,5 +1,5 @@
 import fs from "fs-extra";
-import path from "path";
+import path from "node:path";
 import { createActionsReadme, createComponentsReadme, createLibReadme, createLibDbReadme } from "./readme-creators.js";
 export async function createFolderStructure(projectPath) {
     // Create directories

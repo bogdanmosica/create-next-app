@@ -10,10 +10,13 @@ export async function runCommand(command, cwd) {
     try {
         console.error(`[DEBUG] Running command: ${command} in ${cwd}`);
         const { stdout, stderr } = await execAsync(command, { cwd, timeout: 300000 }); // 5 minute timeout
+        if (stdout) {
+            console.error(`[DEBUG] Command stdout: ${stdout.slice(0, 500)}${stdout.length > 500 ? '...' : ''}`);
+        }
         if (stderr) {
             console.error(`[DEBUG] Command stderr: ${stderr}`);
             // Only throw for actual errors, not warnings
-            if (stderr.toLowerCase().includes('error') && !stderr.includes('WARN')) {
+            if (stderr.toLowerCase().includes('error') && !stderr.includes('WARN') && !stderr.includes('warning')) {
                 throw new Error(`Command failed with stderr: ${stderr}`);
             }
         }
@@ -24,6 +27,7 @@ export async function runCommand(command, cwd) {
         const errorMsg = error instanceof Error ? error.message : String(error);
         console.error(`[DEBUG] Command failed: ${command}`);
         console.error(`[DEBUG] Error details: ${errorMsg}`);
+        console.error(`[DEBUG] Full error object:`, error);
         throw new Error(`Command "${command}" failed: ${errorMsg}`);
     }
 }

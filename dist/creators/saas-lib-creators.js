@@ -4,7 +4,7 @@
  * Generates all files needed for a production-ready SaaS application
  */
 import fs from "fs-extra";
-import path from "path";
+import path from "node:path";
 import { middlewareTemplate } from "../templates/middleware-template.js";
 import { authMiddlewareTemplate, authSessionTemplate, dbDrizzleTemplate, dbQueriesTemplate, dbSchemaTemplate, dbSeedTemplate, dbSetupTemplate, paymentsActionsTemplate, paymentsStripeTemplate } from "../templates/saas-lib-templates.js";
 export async function createSaaSMiddleware(projectPath) {
@@ -48,7 +48,8 @@ export async function updatePackageJsonForSaaS(projectPath) {
     packageJson.devDependencies = {
         ...packageJson.devDependencies,
         "@types/bcryptjs": "^2.4.6",
-        "drizzle-kit": "^0.30.0"
+        "drizzle-kit": "^0.30.0",
+        "tsx": "^4.19.2"
     };
     // Add SaaS-specific scripts
     packageJson.scripts = {
