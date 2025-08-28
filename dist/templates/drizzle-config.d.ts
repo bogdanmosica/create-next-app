@@ -1,2 +1,0 @@
-export declare const drizzleConfigTemplate = "import type { Config } from \"drizzle-kit\";\n\nexport default {\n  schema: \"./lib/db/schema.ts\",\n  out: \"./lib/db/migrations\",\n  dialect: \"postgresql\",\n  dbCredentials: {\n    url: process.env.POSTGRES_URL!,\n  },\n} satisfies Config;";
-//# sourceMappingURL=drizzle-config.d.ts.map

@@ -1,2 +1,0 @@
-export declare const drizzleSchemaTemplate = "import { integer, pgSchema } from \"drizzle-orm/pg-core\";\n\nexport const customSchema = pgSchema('custom');\n\nexport const users = customSchema.table('users', {\n  id: integer()\n});";
-//# sourceMappingURL=drizzle-schema.d.ts.map
