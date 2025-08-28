@@ -93,7 +93,7 @@ Store shared constants in \`lib/constants/\` folder. For example:
 
 ### Database
 - \`lib/db/\` - Database configuration and schema files
-- \`lib/db/schema.ts\` - Drizzle schema definitions
+- \`models/schema/\` - Drizzle schema definitions organized by domain
 - \`lib/db/migrations/\` - Database migration files
 
 ### Utils

@@ -53,8 +53,9 @@ export const Env = createEnv({
 export type EnvType = typeof Env;
 `;
 
-export const dbLibTemplate = `import { drizzle, NodePgDatabase } from 'drizzle-orm/node-postgres';
+export const dbLibTemplate = `import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import * as schema from '@/models/schema';
 import { Env } from './env';
 
@@ -205,6 +206,9 @@ export const teams = pgTable('teams', {
   name: varchar('name', { length: 100 }).notNull(),
   slug: varchar('slug', { length: 100 }).notNull().unique(),
   stripeCustomerId: text('stripe_customer_id'),
+  stripeSubscriptionId: text('stripe_subscription_id'),
+  stripeProductId: text('stripe_product_id'),
+  planName: varchar('plan_name', { length: 50 }),
   subscriptionStatus: varchar('subscription_status', { length: 50 }).default('inactive'),
   isDeleted: boolean('is_deleted').default(false),
   createdAt: timestamp('created_at').defaultNow().notNull(),
@@ -277,6 +281,10 @@ import { users, usersRelations } from './user';
 import { teams, teamMembers, teamsRelations, teamMembersRelations } from './team';
 import { activityLogs, activityLogsRelations } from './activity-log';
 
+// Import types for composite types
+import { User, NewUser } from './user';
+import { Team, NewTeam, TeamMember, NewTeamMember } from './team';
+
 export const schema = {
   // Tables
   users,
@@ -289,6 +297,11 @@ export const schema = {
   teamsRelations,
   teamMembersRelations,
   activityLogsRelations,
+};
+
+// Composite types
+export type TeamDataWithMembers = Team & {
+  members: (TeamMember & { user: Pick<User, 'id' | 'name' | 'email'> })[];
 };
 `;
 
@@ -357,12 +370,12 @@ export const createTeamSchema = z.object({
     .string()
     .min(2, 'Team name must be at least 2 characters')
     .max(50, 'Team name must be less than 50 characters')
-    .regex(/^[a-zA-Z0-9\s-_]+$/, 'Team name can only contain letters, numbers, spaces, hyphens, and underscores'),
+    .regex(/^[a-zA-Z0-9\s_-]+$/, 'Team name can only contain letters, numbers, spaces, hyphens, and underscores'),
   slug: z
     .string()
     .min(2, 'Slug must be at least 2 characters')
     .max(50, 'Slug must be less than 50 characters')
-    .regex(/^[a-z0-9-_]+$/, 'Slug can only contain lowercase letters, numbers, hyphens, and underscores')
+    .regex(/^[a-z0-9_-]+$/, 'Slug can only contain lowercase letters, numbers, hyphens, and underscores')
     .refine(slug => !slug.startsWith('-') && !slug.endsWith('-'), 'Slug cannot start or end with hyphens'),
 });
 
@@ -371,13 +384,13 @@ export const updateTeamSchema = z.object({
     .string()
     .min(2, 'Team name must be at least 2 characters')
     .max(50, 'Team name must be less than 50 characters')
-    .regex(/^[a-zA-Z0-9\s-_]+$/, 'Team name can only contain letters, numbers, spaces, hyphens, and underscores')
+    .regex(/^[a-zA-Z0-9\s_-]+$/, 'Team name can only contain letters, numbers, spaces, hyphens, and underscores')
     .optional(),
   slug: z
     .string()
     .min(2, 'Slug must be at least 2 characters')
     .max(50, 'Slug must be less than 50 characters')
-    .regex(/^[a-z0-9-_]+$/, 'Slug can only contain lowercase letters, numbers, hyphens, and underscores')
+    .regex(/^[a-z0-9_-]+$/, 'Slug can only contain lowercase letters, numbers, hyphens, and underscores')
     .refine(slug => !slug.startsWith('-') && !slug.endsWith('-'), 'Slug cannot start or end with hyphens')
     .optional(),
 });
@@ -385,14 +398,14 @@ export const updateTeamSchema = z.object({
 export const inviteMemberSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
   role: z.enum(['owner', 'admin', 'member'], {
-    errorMap: () => ({ message: 'Role must be owner, admin, or member' }),
+    message: 'Role must be owner, admin, or member',
   }),
 });
 
 export const updateMemberRoleSchema = z.object({
   memberId: z.string().min(1, 'Member ID is required'),
   role: z.enum(['owner', 'admin', 'member'], {
-    errorMap: () => ({ message: 'Role must be owner, admin, or member' }),
+    message: 'Role must be owner, admin, or member',
   }),
 });
 

@@ -12,7 +12,6 @@ import {
   authSessionTemplate,
   dbDrizzleTemplate,
   dbQueriesTemplate,
-  dbSchemaTemplate,
   dbSeedTemplate,
   dbSetupTemplate,
   paymentsActionsTemplate,
@@ -50,10 +49,7 @@ export async function createSaaSLibStructure(projectPath: string): Promise<void>
     path.join(libPath, "db", "queries.ts"),
     dbQueriesTemplate
   );
-  await fs.writeFile(
-    path.join(libPath, "db", "schema.ts"),
-    dbSchemaTemplate
-  );
+  // Schema is now created in models/schema/ by enhanced structure creators
   await fs.writeFile(
     path.join(libPath, "db", "seed.ts"),
     dbSeedTemplate

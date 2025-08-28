@@ -35,7 +35,6 @@ export function LoginForm() {
   // Translations
   const t = useTranslations('auth');
   const tErrors = useTranslations('auth_errors');
-  const tCommon = useTranslations('common');
 
   const {
     register,
@@ -203,7 +202,6 @@ export function SignupForm() {
   // Translations
   const t = useTranslations('auth');
   const tErrors = useTranslations('auth_errors');
-  const tCommon = useTranslations('common');
 
   const extendedSignUpSchema = signUpSchema.extend({
     acceptTerms: z.boolean().refine((val) => val === true, {
@@ -460,17 +458,20 @@ export default function SignUpPage() {
   rootLayout: `import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import { Inter } from "next/font/google";
-import "./globals.css";
+import "../globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
 
 export default async function RootLayout({
   children,
-  params: { locale }
+  params
 }: {
   children: React.ReactNode;
-  params: { locale: string };
+  params: Promise<{ locale: string }>;
 }) {
+  // Await params for Next.js 15 compatibility
+  const { locale } = await params;
+  
   // Providing all messages to the client
   // side is the easiest way to get started
   const messages = await getMessages();
@@ -486,8 +487,7 @@ export default async function RootLayout({
   );
 }`,
 
-  authLayout: `import { useTranslations } from 'next-intl';
-import { Inter } from "next/font/google";
+  authLayout: `import { Inter } from "next/font/google";
 
 const inter = Inter({ subsets: ["latin"] });
 

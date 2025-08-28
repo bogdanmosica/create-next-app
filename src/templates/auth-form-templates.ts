@@ -543,8 +543,9 @@ export async function signIn(data: SignInInput) {
       .setExpirationTime("7d")
       .sign(key);
     
-    // Set cookie
-    cookies().set("session", token, {
+    // Set cookie (Next.js 15 compatible)
+    const cookieStore = await cookies();
+    cookieStore.set("session", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
@@ -567,13 +568,15 @@ export async function signIn(data: SignInInput) {
 }
 
 export async function signOut() {
-  cookies().delete("session");
+  const cookieStore = await cookies();
+  cookieStore.delete("session");
   redirect("/auth/signin");
 }
 
 export async function getCurrentUser() {
   try {
-    const sessionCookie = cookies().get("session");
+    const cookieStore = await cookies();
+    const sessionCookie = cookieStore.get("session");
     
     if (!sessionCookie) {
       return null;

@@ -42,6 +42,8 @@ export async function updatePackageJsonScripts(projectPath: string): Promise<voi
 
   packageJson.scripts = {
     ...packageJson.scripts,
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
     "components:format:fix": "biome check --write components",
     "db:setup": "npx tsx lib/db/setup.ts",
     "db:seed": "npx tsx lib/db/seed.ts",

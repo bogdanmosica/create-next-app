@@ -263,7 +263,7 @@ class NextJsCreatorServer {
       const step11 = "Installing SaaS dependencies...";
       steps.push(step11);
       console.error(`[STEP 11/24] ${step11}`);
-      await runCommand("pnpm add stripe bcryptjs jose zod postgres dotenv", fullPath);
+      await runCommand("pnpm add stripe bcryptjs jose zod pg dotenv", fullPath);
       await runCommand("pnpm add -D @types/bcryptjs @types/pg", fullPath);
       console.error(`[STEP 11/24] ✅ Completed: ${step11}`);
 

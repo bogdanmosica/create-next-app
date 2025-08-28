@@ -156,12 +156,13 @@ pnpm db:migrate
 - TypeScript throughout
 
 ## Technical Stack
-- **Framework**: Next.js 15+ with App Router
-- **Database**: PostgreSQL with Drizzle ORM
+- **Framework**: Next.js 15+ with App Router (async params/cookies compatible)
+- **Database**: PostgreSQL with Drizzle ORM (pg client)
 - **Authentication**: JWT with jose + bcrypt
-- **Payments**: Stripe with webhooks
+- **Payments**: Stripe with webhooks (v2024-06-20 API)
+- **Internationalization**: next-intl with 6 languages
 - **UI**: shadcn/ui + Tailwind CSS
-- **Validation**: Zod schemas
+- **Validation**: Zod schemas with proper regex patterns
 - **Linting**: Biome (replaces ESLint)
 - **TypeScript**: Full type safety
 

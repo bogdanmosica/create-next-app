@@ -67,6 +67,14 @@ export const routing = defineRouting({
       ja: '/auth/登録',
       zh: '/auth/注册',
     },
+    '/auth/forgot-password': {
+      en: '/auth/forgot-password',
+      es: '/auth/recuperar-contrasena',
+      fr: '/auth/mot-de-passe-oublie',
+      de: '/auth/passwort-vergessen',
+      ja: '/auth/パスワード再設定',
+      zh: '/auth/忘记密码',
+    },
     '/settings': {
       en: '/settings',
       es: '/configuracion',
@@ -74,6 +82,38 @@ export const routing = defineRouting({
       de: '/einstellungen',
       ja: '/設定',
       zh: '/设置',
+    },
+    '/teams': {
+      en: '/teams',
+      es: '/equipos',
+      fr: '/equipes',
+      de: '/teams',
+      ja: '/チーム',
+      zh: '/团队',
+    },
+    '/billing': {
+      en: '/billing',
+      es: '/facturacion',
+      fr: '/facturation',
+      de: '/abrechnung',
+      ja: '/請求',
+      zh: '/账单',
+    },
+    '/terms': {
+      en: '/terms',
+      es: '/terminos',
+      fr: '/conditions',
+      de: '/nutzungsbedingungen',
+      ja: '/利用規約',
+      zh: '/条款',
+    },
+    '/privacy': {
+      en: '/privacy',
+      es: '/privacidad',
+      fr: '/confidentialite',
+      de: '/datenschutz',
+      ja: '/プライバシー',
+      zh: '/隐私',
     },
   },
 });
@@ -529,7 +569,7 @@ export type SupportedLocale = typeof SUPPORTED_LOCALES[number]['code'];
 // === NEXT.JS CONFIG INTEGRATION ===
 
 export const nextConfigI18nTemplate = `/** @type {import('next').NextConfig} */
-const withNextIntl = require('next-intl/plugin')('./src/libs/i18n-config.ts');
+const withNextIntl = require('next-intl/plugin')('./libs/i18n-config.ts');
 
 const nextConfig = {
   // Your existing Next.js config

@@ -6,7 +6,7 @@
 
 // Auth templates
 export const authMiddlewareTemplate = `import { z } from 'zod';
-import { TeamDataWithMembers, User } from '@/lib/db/schema';
+import { TeamDataWithMembers, User } from '@/models/schema';
 import { getTeamForUser, getUser } from '@/lib/db/queries';
 import { redirect } from 'next/navigation';
 
@@ -84,7 +84,7 @@ export function withTeam<T>(action: TeamActionFunction<T>) {
 export const authSessionTemplate = `import { compare, hash } from 'bcryptjs';
 import { SignJWT, jwtVerify } from 'jose';
 import { cookies } from 'next/headers';
-import { NewUser } from '@/lib/db/schema';
+import { NewUser } from '@/models/schema';
 
 const key = new TextEncoder().encode(process.env.AUTH_SECRET);
 const SALT_ROUNDS = 10;
@@ -101,7 +101,7 @@ export async function comparePasswords(
 }
 
 type SessionData = {
- user: { id: number };
+ user: { id: string };
  expires: string;
 };
 
@@ -142,9 +142,10 @@ export async function setSession(user: NewUser) {
 }`;
 
 // DB templates
-export const dbDrizzleTemplate = `import { drizzle } from 'drizzle-orm/postgres-js';
-import postgres from 'postgres';
-import * as schema from './schema';
+export const dbDrizzleTemplate = `import { drizzle } from 'drizzle-orm/node-postgres';
+import { Pool } from 'pg';
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
+import * as schema from '@/models/schema';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -153,12 +154,26 @@ if (!process.env.POSTGRES_URL) {
  throw new Error('POSTGRES_URL environment variable is not set');
 }
 
-export const client = postgres(process.env.POSTGRES_URL);
-export const db = drizzle(client, { schema });`;
+declare global {
+  var __db: NodePgDatabase<typeof schema> | undefined;
+}
 
-export const dbQueriesTemplate = `import { desc, and, eq, isNull } from 'drizzle-orm';
+let db: NodePgDatabase<typeof schema>;
+
+if (process.env.NODE_ENV === 'production') {
+  db = drizzle(new Pool({ connectionString: process.env.POSTGRES_URL }), { schema });
+} else {
+  if (!global.__db) {
+    global.__db = drizzle(new Pool({ connectionString: process.env.POSTGRES_URL }), { schema });
+  }
+  db = global.__db;
+}
+
+export { db };`;
+
+export const dbQueriesTemplate = `import { desc, and, eq } from 'drizzle-orm';
 import { db } from './drizzle';
-import { activityLogs, teamMembers, teams, users } from './schema';
+import { activityLogs, teamMembers, teams, users } from '@/models/schema';
 import { cookies } from 'next/headers';
 import { verifyToken } from '@/lib/auth/session';
 
@@ -172,7 +187,7 @@ export async function getUser() {
  if (
  !sessionData ||
  !sessionData.user ||
- typeof sessionData.user.id !== 'number'
+ typeof sessionData.user.id !== 'string'
  ) {
  return null;
  }
@@ -184,7 +199,7 @@ export async function getUser() {
  const user = await db
  .select()
  .from(users)
- .where(and(eq(users.id, sessionData.user.id), isNull(users.deletedAt)))
+ .where(and(eq(users.id, sessionData.user.id), eq(users.isDeleted, false)))
  .limit(1);
 
  if (user.length === 0) {
@@ -194,7 +209,7 @@ export async function getUser() {
  return user[0];
 }
 
-export async function getTeamForUser(userId: number) {
+export async function getTeamForUser(userId: string) {
  // First get the team
  const teamResult = await db
  .select()
@@ -216,8 +231,7 @@ export async function getTeamForUser(userId: number) {
  teamId: teamMembers.teamId,
  userId: teamMembers.userId,
  role: teamMembers.role,
- createdAt: teamMembers.createdAt,
- updatedAt: teamMembers.updatedAt,
+ joinedAt: teamMembers.joinedAt,
  userName: users.name,
  userEmail: users.email
  })
@@ -227,17 +241,16 @@ export async function getTeamForUser(userId: number) {
 
  return {
  ...team,
- teamMembers: membersResult.map(member => ({
- id: member.id,
- teamId: member.teamId,
- userId: member.userId,
- role: member.role,
- createdAt: member.createdAt,
- updatedAt: member.updatedAt,
+ members: membersResult.map(result => ({
+ id: result.id,
+ teamId: result.teamId,
+ userId: result.userId,
+ role: result.role,
+ joinedAt: result.joinedAt,
  user: {
- id: member.userId,
- name: member.userName,
- email: member.userEmail
+ id: result.userId,
+ name: result.userName,
+ email: result.userEmail
  }
  }))
  };
@@ -254,7 +267,7 @@ export async function getTeamByStripeCustomerId(customerId: string) {
 }
 
 export async function updateTeamSubscription(
- teamId: number,
+ teamId: string,
  subscriptionData: {
  stripeSubscriptionId: string | null;
  stripeProductId: string | null;
@@ -271,7 +284,9 @@ export async function updateTeamSubscription(
  .where(eq(teams.id, teamId));
 }`;
 
-export const dbSchemaTemplate = `import {
+// DEPRECATED: Schema is now created in models/schema/ by enhanced structure creators
+// This eliminates schema duplication and type conflicts
+const DEPRECATED_dbSchemaTemplate = `import {
   pgTable,
   serial,
   varchar,
@@ -289,7 +304,7 @@ export const users = pgTable('users', {
   role: varchar('role', { length: 20 }).notNull().default('member'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
-  deletedAt: timestamp('deleted_at'),
+  isDeleted: boolean('is_deleted').default(false),
 });
 
 export const teams = pgTable('teams', {
@@ -352,7 +367,7 @@ export type TeamDataWithMembers = Team & {
 
 export const dbSeedTemplate = `import { stripe } from '../payments/stripe';
 import { db } from './drizzle';
-import { users, teams, teamMembers } from './schema';
+import { users, teams, teamMembers } from '@/models/schema';
 import { hashPassword } from '@/lib/auth/session';
 
 async function createStripeProducts() {
@@ -400,8 +415,8 @@ async function seed() {
  .insert(users)
  .values([{
  email: email,
- passwordHash: passwordHash,
- role: "owner",
+ hashedPassword: passwordHash,
+ name: 'Test User',
  }])
  .returning();
 
@@ -411,6 +426,7 @@ async function seed() {
  .insert(teams)
  .values({
  name: 'Test Team',
+ slug: 'test-team',
  })
  .returning();
 
@@ -514,7 +530,7 @@ export const customerPortalAction = withTeam(async (_, team) => {
 
 export const paymentsStripeTemplate = `import Stripe from 'stripe';
 import { redirect } from 'next/navigation';
-import { Team } from '@/lib/db/schema';
+import { Team } from '@/models/schema';
 import {
  getTeamByStripeCustomerId,
  getUser,
