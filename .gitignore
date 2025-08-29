@@ -43,3 +43,8 @@ coverage/
 
 # Test outputs
 test-output/
+
+# MCP Testing
+next_test_projects/
+**/next_test_projects/
+test_projects_*

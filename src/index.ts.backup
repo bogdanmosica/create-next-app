@@ -50,22 +50,6 @@ import {
 } from "./creators/i18n-creators.js";
 import { checkSystemRequirements } from "./utils/system-checks.js";
 
-// Import new tool functions
-import { createNextJsBase } from "./tools/core/nextjs-base.js";
-import { setupBiomeLinting } from "./tools/core/biome-linting.js";
-import { setupVSCodeConfig } from "./tools/core/vscode-config.js";
-import { setupDrizzleOrm } from "./tools/database/drizzle-orm.js";
-import { setupEnvironmentVars } from "./tools/database/environment-vars.js";
-import { setupAuthenticationJwt } from "./tools/auth/authentication-jwt.js";
-import { setupProtectedRoutes } from "./tools/auth/protected-routes.js";
-import { setupStripePayments } from "./tools/payments/stripe-payments.js";
-import { setupStripeWebhooks } from "./tools/payments/stripe-webhooks.js";
-import { setupTeamManagement } from "./tools/teams/team-management.js";
-import { setupFormHandling } from "./tools/forms/form-handling.js";
-import { setupGitWorkflow } from "./tools/dev/git-workflow.js";
-import { setupInternationalization } from "./tools/i18n/internationalization.js";
-import { validateToolInput, getDefaultConfig } from "./utils/tool-validator.js";
-
 class NextJsCreatorServer {
   private server: Server;
 
@@ -103,10 +87,9 @@ class NextJsCreatorServer {
   private setupToolHandlers(): void {
     this.server.setRequestHandler(ListToolsRequestSchema, async () => ({
       tools: [
-        // Main orchestrator tool (backward compatible)
         {
           name: "create_nextjs_app",
-          description: "Creates a complete Next.js SaaS application with all features (orchestrates other tools)",
+          description: "Creates a complete Next.js application with predefined configurations including Biome, shadcn/ui, and Drizzle ORM",
           inputSchema: {
             type: "object",
             properties: {
@@ -118,222 +101,6 @@ class NextJsCreatorServer {
                 type: "string",
                 description: "The name of the project (optional, defaults to current directory)",
               },
-              features: {
-                type: "object",
-                description: "Features to include (all enabled by default)",
-                properties: {
-                  core: { type: "boolean", description: "Base Next.js + shadcn/ui setup" },
-                  database: { type: "boolean", description: "Drizzle ORM + environment setup" },
-                  authentication: { type: "boolean", description: "JWT authentication system" },
-                  payments: { type: "boolean", description: "Stripe payments integration" },
-                  teamManagement: { type: "boolean", description: "Multi-tenant team system" },
-                  devExperience: { type: "boolean", description: "Testing, forms, git workflow" },
-                  internationalization: { type: "boolean", description: "Multi-language support" },
-                },
-              },
-            },
-            required: ["projectPath"],
-          },
-        },
-        
-        // Core foundation tools
-        {
-          name: "create_nextjs_base",
-          description: "Creates basic Next.js application with TypeScript, Tailwind, and optional shadcn/ui",
-          inputSchema: {
-            type: "object",
-            properties: {
-              projectPath: { type: "string", description: "Project directory path" },
-              projectName: { type: "string", description: "Project name (optional)" },
-              includeShadcn: { type: "boolean", description: "Include shadcn/ui components (default: true)" },
-              includeAllComponents: { type: "boolean", description: "Add all shadcn components (default: true)" },
-            },
-            required: ["projectPath"],
-          },
-        },
-        {
-          name: "setup_biome_linting",
-          description: "Sets up Biome for linting and formatting with custom rules",
-          inputSchema: {
-            type: "object",
-            properties: {
-              projectPath: { type: "string", description: "Project directory path" },
-              includeCustomRules: { type: "boolean", description: "Include GritQL custom rules (default: true)" },
-              strictMode: { type: "boolean", description: "Enable strict linting mode (default: true)" },
-            },
-            required: ["projectPath"],
-          },
-        },
-        {
-          name: "setup_vscode_config",
-          description: "Creates VSCode settings optimized for the project",
-          inputSchema: {
-            type: "object",
-            properties: {
-              projectPath: { type: "string", description: "Project directory path" },
-              optimizeForBiome: { type: "boolean", description: "Optimize for Biome linting (default: true)" },
-            },
-            required: ["projectPath"],
-          },
-        },
-        
-        // Database tools
-        {
-          name: "setup_drizzle_orm",
-          description: "Sets up Drizzle ORM with PostgreSQL/MySQL/SQLite",
-          inputSchema: {
-            type: "object",
-            properties: {
-              projectPath: { type: "string", description: "Project directory path" },
-              provider: { type: "string", enum: ["postgresql", "mysql", "sqlite"], description: "Database provider (default: postgresql)" },
-              includeExamples: { type: "boolean", description: "Include example schemas (default: true)" },
-            },
-            required: ["projectPath"],
-          },
-        },
-        {
-          name: "setup_environment_vars",
-          description: "Creates environment variable files with T3 validation",
-          inputSchema: {
-            type: "object",
-            properties: {
-              projectPath: { type: "string", description: "Project directory path" },
-              includeT3Validation: { type: "boolean", description: "Include T3 Env validation (default: true)" },
-              includeExampleFile: { type: "boolean", description: "Create .env.example file (default: true)" },
-            },
-            required: ["projectPath"],
-          },
-        },
-        
-        // Authentication tools
-        {
-          name: "setup_authentication_jwt",
-          description: "Sets up JWT authentication with bcrypt password hashing",
-          inputSchema: {
-            type: "object",
-            properties: {
-              projectPath: { type: "string", description: "Project directory path" },
-              includePasswordHashing: { type: "boolean", description: "Include bcrypt password hashing (default: true)" },
-              includeUserManagement: { type: "boolean", description: "Include user CRUD operations (default: true)" },
-              requireDatabase: { type: "boolean", description: "Auto-install database if missing (default: true)" },
-            },
-            required: ["projectPath"],
-          },
-        },
-        {
-          name: "setup_protected_routes",
-          description: "Creates middleware for route protection",
-          inputSchema: {
-            type: "object",
-            properties: {
-              projectPath: { type: "string", description: "Project directory path" },
-              protectionLevel: { type: "string", enum: ["basic", "advanced"], description: "Protection level (default: advanced)" },
-              requireAuth: { type: "boolean", description: "Auto-install auth if missing (default: true)" },
-            },
-            required: ["projectPath"],
-          },
-        },
-        
-        // Payment tools
-        {
-          name: "setup_stripe_payments",
-          description: "Sets up Stripe payments with subscriptions and one-time payments",
-          inputSchema: {
-            type: "object",
-            properties: {
-              projectPath: { type: "string", description: "Project directory path" },
-              includeSubscriptions: { type: "boolean", description: "Include subscription payments (default: true)" },
-              includeOneTime: { type: "boolean", description: "Include one-time payments (default: true)" },
-              requireAuth: { type: "boolean", description: "Auto-install auth if missing (default: true)" },
-            },
-            required: ["projectPath"],
-          },
-        },
-        {
-          name: "setup_stripe_webhooks",
-          description: "Sets up Stripe webhooks and customer portal",
-          inputSchema: {
-            type: "object",
-            properties: {
-              projectPath: { type: "string", description: "Project directory path" },
-              includeCustomerPortal: { type: "boolean", description: "Include customer portal (default: true)" },
-              requireStripe: { type: "boolean", description: "Auto-install Stripe if missing (default: true)" },
-            },
-            required: ["projectPath"],
-          },
-        },
-        
-        // Team management
-        {
-          name: "setup_team_management",
-          description: "Sets up multi-tenant team management system",
-          inputSchema: {
-            type: "object",
-            properties: {
-              projectPath: { type: "string", description: "Project directory path" },
-              includeRoles: { type: "boolean", description: "Include role-based permissions (default: true)" },
-              includeActivityLogs: { type: "boolean", description: "Include activity logging (default: true)" },
-              requireAuth: { type: "boolean", description: "Auto-install auth if missing (default: true)" },
-              requireDatabase: { type: "boolean", description: "Auto-install database if missing (default: true)" },
-            },
-            required: ["projectPath"],
-          },
-        },
-        
-        // Developer experience tools
-        {
-          name: "setup_form_handling",
-          description: "Sets up React Hook Form with Zod validation and React Query",
-          inputSchema: {
-            type: "object",
-            properties: {
-              projectPath: { type: "string", description: "Project directory path" },
-              includeZodValidation: { type: "boolean", description: "Include Zod validation schemas (default: true)" },
-              includeReactQuery: { type: "boolean", description: "Include React Query for data fetching (default: true)" },
-            },
-            required: ["projectPath"],
-          },
-        },
-        {
-          name: "setup_testing_suite",
-          description: "Sets up comprehensive testing with Vitest, Playwright, and MSW",
-          inputSchema: {
-            type: "object",
-            properties: {
-              projectPath: { type: "string", description: "Project directory path" },
-              includeUnitTests: { type: "boolean", description: "Include Vitest for unit tests (default: true)" },
-              includeE2ETests: { type: "boolean", description: "Include Playwright for E2E tests (default: true)" },
-              includeMocking: { type: "boolean", description: "Include MSW for API mocking (default: true)" },
-            },
-            required: ["projectPath"],
-          },
-        },
-        {
-          name: "setup_git_workflow",
-          description: "Sets up Git hooks, commit standards, and development workflow",
-          inputSchema: {
-            type: "object",
-            properties: {
-              projectPath: { type: "string", description: "Project directory path" },
-              includeHooks: { type: "boolean", description: "Include Lefthook git hooks (default: true)" },
-              includeCommitStandards: { type: "boolean", description: "Include Commitizen standards (default: true)" },
-              includeLintStaged: { type: "boolean", description: "Include lint-staged (default: true)" },
-            },
-            required: ["projectPath"],
-          },
-        },
-        
-        // Internationalization
-        {
-          name: "setup_internationalization",
-          description: "Sets up next-intl with multi-language support and routing",
-          inputSchema: {
-            type: "object",
-            properties: {
-              projectPath: { type: "string", description: "Project directory path" },
-              languages: { type: "array", items: { type: "string" }, description: "Supported languages (default: en,es,fr,de,ja,zh)" },
-              includeRouting: { type: "boolean", description: "Include internationalized routing (default: true)" },
-              includeAuthForms: { type: "boolean", description: "Include translated auth forms (default: true)" },
             },
             required: ["projectPath"],
           },
@@ -345,105 +112,24 @@ class NextJsCreatorServer {
       const { name, arguments: args } = request.params;
 
       try {
-        // Validate input for the specific tool
-        const validation = await validateToolInput(name as any, args);
-        if (!validation.valid) {
+        if (name === "create_nextjs_app") {
+          const { projectPath, projectName } = args as {
+            projectPath: string;
+            projectName?: string;
+          };
+
+          const result = await this.createNextJsApp(projectPath, projectName);
           return {
             content: [
               {
                 type: "text",
-                text: `❌ Validation failed: ${validation.errors.join(', ')}`,
+                text: result,
               },
             ],
-            isError: true,
           };
         }
 
-        // Show warnings if any
-        if (validation.warnings.length > 0) {
-          console.error(`[WARNING] ${validation.warnings.join(', ')}`);
-        }
-
-        // Merge with defaults
-        const config = { ...getDefaultConfig(name as any), ...args };
-
-        // Handle each tool
-        let result: string;
-        
-        switch (name) {
-          case "create_nextjs_app":
-            // Keep existing orchestrator functionality
-            result = await this.createNextJsApp(config.projectPath, config.projectName);
-            break;
-            
-          case "create_nextjs_base":
-            result = await createNextJsBase(config as any);
-            break;
-            
-          case "setup_biome_linting":
-            result = await setupBiomeLinting(config as any);
-            break;
-            
-          case "setup_vscode_config":
-            result = await setupVSCodeConfig(config as any);
-            break;
-            
-          case "setup_drizzle_orm":
-            result = await setupDrizzleOrm(config as any);
-            break;
-            
-          case "setup_environment_vars":
-            result = await setupEnvironmentVars(config as any);
-            break;
-            
-          case "setup_authentication_jwt":
-            result = await setupAuthenticationJwt(config as any);
-            break;
-            
-          case "setup_protected_routes":
-            result = await setupProtectedRoutes(config as any);
-            break;
-            
-          case "setup_stripe_payments":
-            result = await setupStripePayments(config as any);
-            break;
-            
-          case "setup_stripe_webhooks":
-            result = await setupStripeWebhooks(config as any);
-            break;
-            
-          case "setup_team_management":
-            result = await setupTeamManagement(config as any);
-            break;
-            
-          case "setup_form_handling":
-            result = await setupFormHandling(config as any);
-            break;
-            
-          case "setup_testing_suite":
-            result = "🚧 Tool not yet implemented. Coming in next update!";
-            break;
-            
-          case "setup_git_workflow":
-            result = await setupGitWorkflow(config as any);
-            break;
-            
-          case "setup_internationalization":
-            result = await setupInternationalization(config as any);
-            break;
-
-          default:
-            throw new Error(`Unknown tool: ${name}`);
-        }
-
-        return {
-          content: [
-            {
-              type: "text",
-              text: result,
-            },
-          ],
-        };
+        throw new Error(`Unknown tool: ${name}`);
       } catch (error) {
         return {
           content: [
