@@ -25,7 +25,7 @@ import {
   createDrizzleConfig,
   createEnvironmentFiles
 } from "./creators/config-creators.js";
-import { createFolderStructure } from "./creators/folder-creators.js";
+import { createFolderStructure, FolderStructureOptions } from "./creators/folder-creators.js";
 import { 
   createSaaSMiddleware,
   createSaaSLibStructure,
@@ -49,6 +49,8 @@ import {
   createI18nDocumentation,
 } from "./creators/i18n-creators.js";
 import { checkSystemRequirements } from "./utils/system-checks.js";
+import { TokenAwareWrapper } from "./utils/token-aware-wrapper.js";
+import { TokenTracker, TokenMetrics } from "./utils/token-metrics.js";
 
 // Import new tool functions
 import { createNextJsBase } from "./tools/core/nextjs-base.js";
@@ -401,73 +403,78 @@ class NextJsCreatorServer {
         // Merge with defaults
         const config = { ...getDefaultConfig(name as any), ...args };
 
-        // Handle each tool
+        // Handle each tool with token tracking
         let result: string;
+        const startTime = Date.now();
         
         switch (name) {
           case "setup_nextjs_project_wizard":
             result = this.createProjectWizardResponse(config.projectPath);
+            // Track simple response generation
+            TokenTracker.trackTool(name, '', result, Date.now() - startTime, 0);
             break;
 
           case "create_nextjs_app":
-            // Keep existing orchestrator functionality
+            // Keep existing orchestrator functionality with tracking
             result = await this.createNextJsApp(config.projectPath, config.projectName);
+            // This is a complex tool that tracks internally, just record the final result
+            TokenTracker.trackTool(name, JSON.stringify(config), result, Date.now() - startTime, 50);
             break;
             
           case "create_nextjs_base":
-            result = await createNextJsBase(config as any);
+            result = await this.wrapToolWithTracking(name, createNextJsBase, config as any);
             break;
             
           case "setup_biome_linting":
-            result = await setupBiomeLinting(config as any);
+            result = await this.wrapToolWithTracking(name, setupBiomeLinting, config as any);
             break;
             
           case "setup_vscode_config":
-            result = await setupVSCodeConfig(config as any);
+            result = await this.wrapToolWithTracking(name, setupVSCodeConfig, config as any);
             break;
             
           case "setup_drizzle_orm":
-            result = await setupDrizzleOrm(config as any);
+            result = await this.wrapToolWithTracking(name, setupDrizzleOrm, config as any);
             break;
             
           case "setup_environment_vars":
-            result = await setupEnvironmentVars(config as any);
+            result = await this.wrapToolWithTracking(name, setupEnvironmentVars, config as any);
             break;
             
           case "setup_authentication_jwt":
-            result = await setupAuthenticationJwt(config as any);
+            result = await this.wrapToolWithTracking(name, setupAuthenticationJwt, config as any);
             break;
             
           case "setup_protected_routes":
-            result = await setupProtectedRoutes(config as any);
+            result = await this.wrapToolWithTracking(name, setupProtectedRoutes, config as any);
             break;
             
           case "setup_stripe_payments":
-            result = await setupStripePayments(config as any);
+            result = await this.wrapToolWithTracking(name, setupStripePayments, config as any);
             break;
             
           case "setup_stripe_webhooks":
-            result = await setupStripeWebhooks(config as any);
+            result = await this.wrapToolWithTracking(name, setupStripeWebhooks, config as any);
             break;
             
           case "setup_team_management":
-            result = await setupTeamManagement(config as any);
+            result = await this.wrapToolWithTracking(name, setupTeamManagement, config as any);
             break;
             
           case "setup_form_handling":
-            result = await setupFormHandling(config as any);
+            result = await this.wrapToolWithTracking(name, setupFormHandling, config as any);
             break;
             
           case "setup_testing_suite":
-            result = await setupTestingSuite(config as any);
+            result = await this.wrapToolWithTracking(name, setupTestingSuite, config as any);
             break;
             
           case "setup_git_workflow":
-            result = await setupGitWorkflow(config as any);
+            result = await this.wrapToolWithTracking(name, setupGitWorkflow, config as any);
             break;
             
           case "setup_internationalization":
-            result = await setupInternationalization(config as any);
+            result = await this.wrapToolWithTracking(name, setupInternationalization, config as any);
             break;
 
           case "analyze_token_usage":
@@ -599,11 +606,16 @@ class NextJsCreatorServer {
       await updatePackageJsonScripts(fullPath);
       console.error(`[STEP 8/17] ✅ Completed: ${step8}`);
 
-      // Step 9: Create folder structure
-      const step9 = "Creating folder structure...";
+      // Step 9: Create enhanced folder structure with all features
+      const step9 = "Creating enhanced folder structure...";
       steps.push(step9);
       console.error(`[STEP 9/24] ${step9}`);
-      await createFolderStructure(fullPath);
+      await createFolderStructure(fullPath, {
+        includeModels: true,
+        includeValidations: true, 
+        includeAuth: true,
+        includeEnhancedStructure: true
+      });
       console.error(`[STEP 9/24] ✅ Completed: ${step9}`);
 
       // === INSTALL ALL DEPENDENCIES (Steps 10-14) ===
@@ -871,6 +883,43 @@ I'll help you create a customized Next.js project! Let me know which features yo
 - "**Custom**": Tell me exactly what you want
 
 What would you like to include in your Next.js project?`;
+  }
+
+  /**
+   * Wrap a tool function with token tracking
+   */
+  private async wrapToolWithTracking<T extends any[]>(
+    toolName: string,
+    toolFunction: (...args: T) => Promise<string>,
+    ...args: T
+  ): Promise<string> {
+    const startTime = Date.now();
+    
+    try {
+      // Execute the tool
+      const result = await toolFunction(...args);
+      
+      // Track the execution
+      const executionTime = Date.now() - startTime;
+      const configStr = JSON.stringify(args[0] || {});
+      TokenTracker.trackTool(toolName, configStr, result, executionTime, this.estimateFilesGenerated(result));
+      
+      return result;
+    } catch (error) {
+      // Track failed execution
+      const executionTime = Date.now() - startTime;
+      TokenTracker.trackTool(toolName, JSON.stringify(args[0] || {}), '', executionTime, 0);
+      throw error;
+    }
+  }
+
+  /**
+   * Estimate number of files generated from result text
+   */
+  private estimateFilesGenerated(result: string): number {
+    // Count common file generation indicators
+    const fileMatches = result.match(/\b\w+\.(ts|tsx|js|jsx|json|md|css|scss)|\bCreated.*file|\bGenerated.*file/gi);
+    return fileMatches ? Math.max(fileMatches.length, 1) : 1;
   }
 
   async run(): Promise<void> {

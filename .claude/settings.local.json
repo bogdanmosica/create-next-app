@@ -24,7 +24,10 @@
       "Bash(pnpm test:*)",
       "Bash(if exist next_test_projects rmdir /s /q next_test_projects)",
       "Bash(pnpm search:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "mcp__nextjs-saas__analyze_token_usage",
+      "mcp__nextjs-saas__setup_vscode_config",
+      "mcp__nextjs-saas__create_nextjs_base"
     ],
     "defaultMode": "acceptEdits",
     "additionalDirectories": [

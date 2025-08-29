@@ -44,9 +44,24 @@ export async function analyzeTokenUsage(config: TokenAnalyticsConfig): Promise<s
     report += `## 🔍 Template Analysis\n\n`;
     
     try {
-      const templatesPath = path.join(process.cwd(), 'src/templates');
+      // Try multiple possible template paths
+      const possiblePaths = [
+        path.join(process.cwd(), 'src/templates'),
+        path.join(__dirname, '../../templates'),
+        path.join(__dirname, '../../../src/templates'),
+        // Handle when running from different directories
+        path.resolve(process.cwd(), 'src/templates'),
+      ];
       
-      if (await fs.pathExists(templatesPath)) {
+      let templatesPath = '';
+      for (const checkPath of possiblePaths) {
+        if (await fs.pathExists(checkPath)) {
+          templatesPath = checkPath;
+          break;
+        }
+      }
+      
+      if (templatesPath && await fs.pathExists(templatesPath)) {
         const templateFiles = await fs.readdir(templatesPath);
         let totalTemplateSize = 0;
         let totalEstimatedTokens = 0;
@@ -105,7 +120,12 @@ export async function analyzeTokenUsage(config: TokenAnalyticsConfig): Promise<s
         }
 
       } else {
-        report += `Templates directory not found at: ${templatesPath}\n\n`;
+        report += `Templates directory not found. Searched paths:\n`;
+        for (const checkPath of possiblePaths) {
+          const exists = await fs.pathExists(checkPath).catch(() => false);
+          report += `- ${checkPath} ${exists ? '✅' : '❌'}\n`;
+        }
+        report += `\n`;
       }
 
     } catch (error) {
@@ -148,9 +168,23 @@ export async function analyzeTokenUsage(config: TokenAnalyticsConfig): Promise<s
     report += `## 🔧 Template Optimization Actions\n\n`;
     
     try {
-      const templatesPath = path.join(process.cwd(), 'src/templates');
+      // Use same path resolution logic as template analysis
+      const possiblePaths = [
+        path.join(process.cwd(), 'src/templates'),
+        path.join(__dirname, '../../templates'),
+        path.join(__dirname, '../../../src/templates'),
+        path.resolve(process.cwd(), 'src/templates'),
+      ];
       
-      if (await fs.pathExists(templatesPath)) {
+      let templatesPath = '';
+      for (const checkPath of possiblePaths) {
+        if (await fs.pathExists(checkPath)) {
+          templatesPath = checkPath;
+          break;
+        }
+      }
+      
+      if (templatesPath && await fs.pathExists(templatesPath)) {
         const templateFiles = await fs.readdir(templatesPath);
         
         for (const file of templateFiles.filter(f => f.endsWith('.ts'))) {

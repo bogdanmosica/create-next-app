@@ -7,7 +7,7 @@
 import fs from "fs-extra";
 import path from "node:path";
 import { runCommand } from "../../runners/command-runner.js";
-import { createFolderStructure } from "../../creators/folder-creators.js";
+import { createFolderStructure, FolderStructureOptions } from "../../creators/folder-creators.js";
 import { updatePackageJsonScripts } from "../../creators/config-creators.js";
 import { installPackages, getPackageGroupsForTool } from "../../utils/auto-installer.js";
 import { detectProjectState } from "../../utils/dependency-detector.js";
@@ -75,11 +75,16 @@ export async function createNextJsBase(config: NextJsBaseConfig): Promise<string
     await updatePackageJsonScripts(fullPath);
     console.error(`[STEP 4/6] ✅ Completed: ${step4}`);
 
-    // Step 5: Create folder structure
-    const step5 = "Creating folder structure...";
+    // Step 5: Create minimal folder structure (no models, auth, or validations)
+    const step5 = "Creating basic folder structure...";
     steps.push(step5);
     console.error(`[STEP 5/6] ${step5}`);
-    await createFolderStructure(fullPath);
+    await createFolderStructure(fullPath, {
+      includeModels: false,
+      includeValidations: false, 
+      includeAuth: false,
+      includeEnhancedStructure: false
+    });
     console.error(`[STEP 5/6] ✅ Completed: ${step5}`);
 
     const totalTime = ((Date.now() - startTime) / 1000).toFixed(2);

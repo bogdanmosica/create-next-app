@@ -12,7 +12,23 @@ import {
   createEnhancedStructureReadme,
 } from "./enhanced-structure-creators.js";
 
-export async function createFolderStructure(projectPath: string): Promise<void> {
+export interface FolderStructureOptions {
+  includeModels?: boolean;
+  includeValidations?: boolean;
+  includeAuth?: boolean;
+  includeEnhancedStructure?: boolean;
+}
+
+export async function createFolderStructure(
+  projectPath: string, 
+  options: FolderStructureOptions = {}
+): Promise<void> {
+  const {
+    includeModels = false,
+    includeValidations = false,
+    includeAuth = false,
+    includeEnhancedStructure = false
+  } = options;
   // Create base directories (existing structure)
   const folders = [
     "actions",
@@ -69,37 +85,69 @@ export async function createFolderStructure(projectPath: string): Promise<void> 
     throw new Error(`Failed to create README files: ${error instanceof Error ? error.message : String(error)}`);
   }
 
-  // === ENHANCED PROJECT STRUCTURE ===
-  try {
-    console.error(`[DEBUG] Creating enhanced project structure...`);
-    
-    // Create enhanced folder structure
-    await createEnhancedProjectStructure(projectPath);
-    
-    // Create libs structure with utilities
-    await createLibsStructure(projectPath);
-    
-    // Create models structure with database schemas
-    await createModelsStructure(projectPath);
-    
-    // Create validations structure with Zod schemas
-    await createValidationsStructure(projectPath);
-    
-    // Create auth components (login/signup forms)
-    await createAuthComponents(projectPath);
-    
-    // Create auth pages
-    await createAuthPages(projectPath);
-    
-    // Create enhanced auth actions
-    await createEnhancedAuthActions(projectPath);
-    
-    // Create enhanced structure documentation
-    await createEnhancedStructureReadme(projectPath);
-    
-    console.error(`[DEBUG] Enhanced project structure created successfully`);
-  } catch (error) {
-    console.error(`[ERROR] Failed to create enhanced project structure: ${error}`);
-    throw new Error(`Failed to create enhanced project structure: ${error instanceof Error ? error.message : String(error)}`);
+  // === ENHANCED PROJECT STRUCTURE (CONDITIONAL) ===
+  if (includeEnhancedStructure) {
+    try {
+      console.error(`[DEBUG] Creating enhanced project structure...`);
+      
+      // Create enhanced folder structure
+      await createEnhancedProjectStructure(projectPath);
+      
+      // Create libs structure with utilities
+      await createLibsStructure(projectPath);
+      
+      // Create enhanced structure documentation
+      await createEnhancedStructureReadme(projectPath);
+      
+      console.error(`[DEBUG] Enhanced project structure created successfully`);
+    } catch (error) {
+      console.error(`[ERROR] Failed to create enhanced project structure: ${error}`);
+      throw new Error(`Failed to create enhanced project structure: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
+  // === DATABASE MODELS (CONDITIONAL) ===
+  if (includeModels) {
+    try {
+      console.error(`[DEBUG] Creating models structure...`);
+      await createModelsStructure(projectPath);
+      console.error(`[DEBUG] Models structure created successfully`);
+    } catch (error) {
+      console.error(`[ERROR] Failed to create models structure: ${error}`);
+      throw new Error(`Failed to create models structure: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
+  // === VALIDATIONS (CONDITIONAL) ===
+  if (includeValidations) {
+    try {
+      console.error(`[DEBUG] Creating validations structure...`);
+      await createValidationsStructure(projectPath);
+      console.error(`[DEBUG] Validations structure created successfully`);
+    } catch (error) {
+      console.error(`[ERROR] Failed to create validations structure: ${error}`);
+      throw new Error(`Failed to create validations structure: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
+  // === AUTH COMPONENTS (CONDITIONAL) ===
+  if (includeAuth) {
+    try {
+      console.error(`[DEBUG] Creating auth components...`);
+      
+      // Create auth components (login/signup forms)
+      await createAuthComponents(projectPath);
+      
+      // Create auth pages
+      await createAuthPages(projectPath);
+      
+      // Create enhanced auth actions
+      await createEnhancedAuthActions(projectPath);
+      
+      console.error(`[DEBUG] Auth components created successfully`);
+    } catch (error) {
+      console.error(`[ERROR] Failed to create auth components: ${error}`);
+      throw new Error(`Failed to create auth components: ${error instanceof Error ? error.message : String(error)}`);
+    }
   }
 }
