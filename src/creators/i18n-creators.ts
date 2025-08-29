@@ -185,6 +185,84 @@ export async function createI18nRouting(projectPath: string): Promise<void> {
     const localePath = path.join(appPath, "[locale]");
     await fs.ensureDir(localePath);
 
+    // Handle root layout - move existing layout to a backup if it exists
+    const rootLayoutPath = path.join(appPath, "layout.tsx");
+    const rootLayoutExists = await fs.pathExists(rootLayoutPath);
+    
+    if (rootLayoutExists) {
+      // Read existing layout to preserve any customizations
+      const existingLayout = await fs.readFile(rootLayoutPath, 'utf-8');
+      
+      // Create a root layout that provides locale support
+      const rootLayoutWithI18n = `import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
+import { NextIntlClientProvider } from 'next-intl';
+import { getMessages, setRequestLocale } from 'next-intl/server';
+import { routing } from '@/libs/i18n-routing';
+
+import './globals.css';
+
+export function generateStaticParams() {
+  return routing.locales.map((locale) => ({ locale }));
+}
+
+export const metadata: Metadata = {
+  title: 'SaaS Starter',
+  description: 'Complete Next.js SaaS application with authentication, payments, and team management',
+};
+
+export default async function RootLayout({
+  children,
+  params
+}: {
+  children: React.ReactNode;
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
+  
+  // Ensure that the incoming locale is valid
+  if (!routing.locales.includes(locale as any)) {
+    notFound();
+  }
+
+  // Enable static rendering
+  setRequestLocale(locale);
+
+  // Providing all messages to the client side is the easiest way to get started
+  const messages = await getMessages();
+
+  return (
+    <html lang={locale}>
+      <body>
+        <NextIntlClientProvider messages={messages}>
+          {children}
+        </NextIntlClientProvider>
+      </body>
+    </html>
+  );
+}`;
+      
+      // Backup existing layout
+      await fs.writeFile(path.join(appPath, "layout.tsx.backup"), existingLayout);
+      
+      // Move existing layout to [locale] directory as a base
+      await fs.move(rootLayoutPath, path.join(localePath, "layout.tsx"));
+      
+      // Create new root layout
+      await fs.writeFile(rootLayoutPath, rootLayoutWithI18n);
+      
+      console.error(`[DEBUG] Root layout updated for i18n, backup created`);
+    }
+
+    // Handle root page - move it to [locale] directory
+    const rootPagePath = path.join(appPath, "page.tsx");
+    const rootPageExists = await fs.pathExists(rootPagePath);
+    
+    if (rootPageExists) {
+      await fs.move(rootPagePath, path.join(localePath, "page.tsx"));
+      console.error(`[DEBUG] Root page moved to [locale] directory`);
+    }
+
     // Move existing routes into [locale] directory
     const routesToMove = ["auth", "dashboard"];
     
@@ -210,13 +288,10 @@ export async function createI18nRouting(projectPath: string): Promise<void> {
       }
     }
 
-    // Create root layout for [locale]
-    const localeLayoutPath = path.join(localePath, "layout.tsx");
-    await fs.writeFile(localeLayoutPath, i18nAuthPagesTemplates.rootLayout);
-
-    // Create a basic page.tsx in [locale] root
-    const localePageContent = `import { useTranslations } from 'next-intl';
-import { Link } from '@/libs/i18n-navigation';
+    // If no root page was moved, create a basic page.tsx in [locale] root
+    if (!rootPageExists) {
+      const localePageContent = `import { useTranslations } from 'next-intl';
+import { Link } from '@/lib/navigation';
 
 export default function HomePage() {
   const t = useTranslations('navigation');
@@ -249,7 +324,8 @@ export default function HomePage() {
   );
 }
 `;
-    await fs.writeFile(path.join(localePath, "page.tsx"), localePageContent);
+      await fs.writeFile(path.join(localePath, "page.tsx"), localePageContent);
+    }
 
     console.error(`[DEBUG] i18n routing structure created successfully`);
   } catch (error) {
@@ -292,7 +368,14 @@ export default function middleware(request: NextRequest) {
 
 export const config = {
   // Match only internationalized pathnames and API routes
-  matcher: ['/((?!api|_next|_vercel|.*\\\\..*).*)'],
+  matcher: [
+    // Match all pathnames except for
+    // - API routes
+    // - _next (Next.js internals)
+    // - _static (inside /public)
+    // - all items inside /public (images, icons, etc)
+    '/((?!api|_next/static|_next/image|favicon.ico).*)',
+  ],
 };
 `;
 
@@ -460,7 +543,7 @@ const message = t('password_min', { min: 8 });
 
 ### Navigation with Locale
 \`\`\`tsx
-import { Link } from '@/libs/i18n-navigation';
+import { Link } from '@/lib/navigation';
 
 export function Navigation() {
   return (

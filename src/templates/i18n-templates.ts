@@ -7,7 +7,7 @@
 // === I18N CONFIGURATION TEMPLATES ===
 
 export const i18nConfigTemplate = `import { getRequestConfig } from 'next-intl/server';
-import { routing } from './i18n-routing';
+import { routing } from './libs/i18n-routing';
 
 export default getRequestConfig(async ({ requestLocale }) => {
   // This typically corresponds to the \`[locale]\` segment
@@ -123,7 +123,7 @@ export type Locale = (typeof routing.locales)[number];
 `;
 
 export const i18nNavigationTemplate = `import { createNavigation } from 'next-intl/navigation';
-import { routing } from './i18n-routing';
+import { routing } from './libs/i18n-routing';
 
 export const { Link, redirect, usePathname, useRouter } = createNavigation(routing);
 `;
@@ -135,7 +135,14 @@ export default createMiddleware(routing);
 
 export const config = {
   // Match only internationalized pathnames
-  matcher: ['/', '/(de|en|es|fr|ja|zh)/:path*'],
+  matcher: [
+    // Match all pathnames except for
+    // - API routes
+    // - _next (Next.js internals)
+    // - _static (inside /public)  
+    // - all items inside /public (images, icons, etc)
+    '/((?!api|_next/static|_next/image|favicon.ico).*)',
+  ],
 };
 `;
 

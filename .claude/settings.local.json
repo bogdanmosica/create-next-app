@@ -27,7 +27,14 @@
       "Bash(find:*)",
       "mcp__nextjs-saas__analyze_token_usage",
       "mcp__nextjs-saas__setup_vscode_config",
-      "mcp__nextjs-saas__create_nextjs_base"
+      "mcp__nextjs-saas__create_nextjs_base",
+      "mcp__nextjs-saas__setup_internationalization",
+      "Read(D:\\Projects\\test-fix-i18n-routes/**)",
+      "Read(D:\\Projects\\test-build-fix/**)",
+      "Read(D:\\Projects\\test-minimal-i18n/**)",
+      "Read(D:\\Projects\\test-minimal-i18n/**)",
+      "Read(D:\\Projects\\test-minimal-i18n/**)",
+      "Read(D:\\Projects\\test-minimal-i18n/**)"
     ],
     "defaultMode": "acceptEdits",
     "additionalDirectories": [
