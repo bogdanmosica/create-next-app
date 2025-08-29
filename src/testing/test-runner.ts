@@ -20,6 +20,7 @@ import { setupStripePayments } from "../tools/payments/stripe-payments.js";
 import { setupStripeWebhooks } from "../tools/payments/stripe-webhooks.js";
 import { setupTeamManagement } from "../tools/teams/team-management.js";
 import { setupFormHandling } from "../tools/forms/form-handling.js";
+import { setupTestingSuite } from "../tools/dev/testing-suite.js";
 
 export interface TestCase {
   name: string;
@@ -207,6 +208,9 @@ export class MCPTestRunner {
         case 'setup_form_handling':
           toolResult = await setupFormHandling({ projectPath, ...toolConfig.config });
           break;
+        case 'setup_testing_suite':
+          toolResult = await setupTestingSuite({ projectPath, ...toolConfig.config });
+          break;
         default:
           throw new Error(`Unknown tool: ${toolConfig.name}`);
       }
@@ -275,15 +279,15 @@ export class MCPTestRunner {
         ],
         expectedFiles: [
           "package.json",
-          "next.config.js",
-          "tailwind.config.ts",
+          "next.config.ts",
+          "postcss.config.mjs",
           "components.json",
           "components/ui/button.tsx",
           "lib/utils.ts"
         ],
         expectedPackages: ["next", "@radix-ui/react-slot", "tailwindcss"],
         validationChecks: [
-          { type: 'file-exists', description: 'Next.js config exists', check: 'next.config.js' },
+          { type: 'file-exists', description: 'Next.js config exists', check: 'next.config.ts' },
           { type: 'package-installed', description: 'Next.js installed', check: 'next' },
           { type: 'package-installed', description: 'Tailwind installed', check: 'tailwindcss' }
         ]
@@ -322,7 +326,7 @@ export class MCPTestRunner {
         ],
         expectedFiles: [
           "drizzle.config.ts",
-          "lib/db.ts",
+          "libs/db.ts",
           "models/user.ts",
           ".env.example",
           "libs/env.ts"
@@ -372,16 +376,16 @@ export class MCPTestRunner {
           { name: "setup_stripe_webhooks", config: { includeCustomerPortal: true } }
         ],
         expectedFiles: [
-          "lib/payments/stripe-client.ts",
-          "lib/payments/stripe-utils.ts",
-          "actions/payments/stripe-actions.ts",
+          "lib/payments/stripe.ts",
+          "lib/payments/utils.ts",
+          "actions/payments.ts",
           "components/payments/payment-button.tsx",
           "app/api/webhooks/stripe/route.ts",
           "lib/payments/webhook-handlers.ts"
         ],
         expectedPackages: ["stripe", "@stripe/stripe-js"],
         validationChecks: [
-          { type: 'file-exists', description: 'Stripe client exists', check: 'lib/payments/stripe-client.ts' },
+          { type: 'file-exists', description: 'Stripe client exists', check: 'lib/payments/stripe.ts' },
           { type: 'file-exists', description: 'Webhook endpoint exists', check: 'app/api/webhooks/stripe/route.ts' }
         ]
       },
@@ -435,7 +439,33 @@ export class MCPTestRunner {
         ]
       },
 
-      // Test 8: Complete SaaS setup
+      // Test 8: Testing Infrastructure
+      {
+        name: "Testing Infrastructure",
+        description: "Test comprehensive testing setup with Vitest, Playwright, and MSW",
+        tools: [
+          { name: "create_nextjs_base", config: {} },
+          { name: "setup_testing_suite", config: { includeUnitTests: true, includeE2ETests: true, includeMocking: true } }
+        ],
+        expectedFiles: [
+          "vitest.config.ts",
+          "playwright.config.ts",
+          "src/test-setup.ts",
+          "src/mocks/handlers.ts",
+          "__tests__/test-utils.tsx",
+          "__tests__/components/button.test.tsx",
+          "e2e/homepage.spec.ts"
+        ],
+        expectedPackages: ["vitest", "@playwright/test", "msw", "@testing-library/react"],
+        validationChecks: [
+          { type: 'file-exists', description: 'Vitest config exists', check: 'vitest.config.ts' },
+          { type: 'file-exists', description: 'Playwright config exists', check: 'playwright.config.ts' },
+          { type: 'file-exists', description: 'Test utilities exist', check: '__tests__/test-utils.tsx' },
+          { type: 'package-installed', description: 'Vitest installed', check: 'vitest' }
+        ]
+      },
+
+      // Test 9: Complete SaaS setup
       {
         name: "Complete SaaS Application",
         description: "Test full SaaS setup with all major features",
@@ -449,7 +479,8 @@ export class MCPTestRunner {
           { name: "setup_stripe_payments", config: {} },
           { name: "setup_stripe_webhooks", config: {} },
           { name: "setup_team_management", config: {} },
-          { name: "setup_form_handling", config: {} }
+          { name: "setup_form_handling", config: {} },
+          { name: "setup_testing_suite", config: {} }
         ],
         expectedFiles: [
           "package.json",
@@ -457,7 +488,7 @@ export class MCPTestRunner {
           "drizzle.config.ts",
           "middleware.ts",
           "lib/auth/session.ts",
-          "lib/payments/stripe-client.ts",
+          "lib/payments/stripe.ts",
           "models/team.ts",
           "lib/forms/hooks.ts"
         ],
@@ -475,7 +506,7 @@ export class MCPTestRunner {
               const criticalFiles = [
                 'lib/auth/session.ts',
                 'models/team.ts',
-                'lib/payments/stripe-client.ts',
+                'lib/payments/stripe.ts',
                 'components/forms/form-input.tsx'
               ];
               

@@ -54,11 +54,18 @@ export async function setupBiomeLinting(config: BiomeLintingConfig): Promise<str
     
     console.error(`[STEP 1/4] ✅ Completed: ${step1}`);
 
-    // Step 2: Initialize Biome config
+    // Step 2: Initialize Biome config (skip if config exists)
     const step2 = "Initializing Biome configuration...";
     steps.push(step2);
     console.error(`[STEP 2/4] ${step2}`);
-    await runCommand("pnpm exec biome init", fullPath);
+    
+    const biomeConfigPath = path.join(fullPath, "biome.json");
+    if (!await fs.pathExists(biomeConfigPath)) {
+      await runCommand("pnpm exec biome init", fullPath);
+    } else {
+      console.error(`[STEP 2/4] ℹ️  Biome config already exists, skipping init`);
+    }
+    
     console.error(`[STEP 2/4] ✅ Completed: ${step2}`);
 
     // Step 3: Create custom Biome config with GritQL rules

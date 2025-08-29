@@ -63,15 +63,15 @@ export async function setupProtectedRoutes(config: ProtectedRoutesConfig): Promi
     const authPagesDir = path.join(fullPath, "app", "auth");
     await fs.ensureDir(authPagesDir);
     
-    // Create login page
+    // Create login page directory first, then the file
+    await fs.ensureDir(path.join(authPagesDir, "login"));
     const loginPageTemplate = createLoginPageTemplate();
     await fs.writeFile(path.join(authPagesDir, "login", "page.tsx"), loginPageTemplate);
-    await fs.ensureDir(path.join(authPagesDir, "login"));
     
-    // Create signup page
+    // Create signup page directory first, then the file
+    await fs.ensureDir(path.join(authPagesDir, "signup"));
     const signupPageTemplate = createSignupPageTemplate();
     await fs.writeFile(path.join(authPagesDir, "signup", "page.tsx"), signupPageTemplate);
-    await fs.ensureDir(path.join(authPagesDir, "signup"));
     
     console.error(`[STEP 2/4] ✅ Completed: ${step2}`);
 

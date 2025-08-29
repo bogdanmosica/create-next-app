@@ -62,6 +62,7 @@ import { setupStripePayments } from "./tools/payments/stripe-payments.js";
 import { setupStripeWebhooks } from "./tools/payments/stripe-webhooks.js";
 import { setupTeamManagement } from "./tools/teams/team-management.js";
 import { setupFormHandling } from "./tools/forms/form-handling.js";
+import { setupTestingSuite } from "./tools/dev/testing-suite.js";
 import { setupGitWorkflow } from "./tools/dev/git-workflow.js";
 import { setupInternationalization } from "./tools/i18n/internationalization.js";
 import { validateToolInput, getDefaultConfig } from "./utils/tool-validator.js";
@@ -421,7 +422,7 @@ class NextJsCreatorServer {
             break;
             
           case "setup_testing_suite":
-            result = "🚧 Tool not yet implemented. Coming in next update!";
+            result = await setupTestingSuite(config as any);
             break;
             
           case "setup_git_workflow":

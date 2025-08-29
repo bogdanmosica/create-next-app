@@ -52,8 +52,8 @@ export async function setupStripePayments(config: StripePaymentsConfig): Promise
     steps.push(step1);
     console.error(`[STEP 1/6] ${step1}`);
     
-    await runCommand("pnpm add stripe", fullPath);
-    await runCommand("pnpm add -D @types/stripe-event-types", fullPath);
+    await runCommand("pnpm add stripe @stripe/stripe-js", fullPath);
+    await runCommand("pnpm add -D stripe-event-types", fullPath);
     
     console.error(`[STEP 1/6] ✅ Completed: ${step1}`);
 

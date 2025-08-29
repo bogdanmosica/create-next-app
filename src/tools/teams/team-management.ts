@@ -62,10 +62,12 @@ export async function setupTeamManagement(config: TeamManagementConfig): Promise
       throw new Error("Database is required for team management. Run setup_drizzle_orm first.");
     }
 
-    // Check for existing team setup
-    const teamModelsPath = path.join(projectPath, "models", "team.ts");
-    if (await fs.pathExists(teamModelsPath)) {
-      throw new Error("Team management appears to already be set up (models/team.ts exists).");
+    // Check for existing team setup by looking for more specific indicators
+    const teamActionsPath = path.join(projectPath, "actions", "team.ts");
+    const teamQueriesPath = path.join(projectPath, "lib", "db", "team-queries.ts");
+    
+    if (await fs.pathExists(teamActionsPath) && await fs.pathExists(teamQueriesPath)) {
+      throw new Error("Team management appears to already be set up (team actions and queries exist).");
     }
 
     // Step 1: Install dependencies
