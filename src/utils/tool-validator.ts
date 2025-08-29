@@ -16,6 +16,8 @@ const baseToolSchema = z.object({
 
 // Individual tool schemas
 export const toolSchemas = {
+  setup_nextjs_project_wizard: baseToolSchema,
+  
   create_nextjs_base: baseToolSchema.extend({
     includeShadcn: z.boolean().optional(),
     includeAllComponents: z.boolean().optional(),
@@ -104,6 +106,14 @@ export const toolSchemas = {
       internationalization: z.boolean().optional(),
     }).optional(),
   }),
+
+  // Analytics tool
+  analyze_token_usage: z.object({
+    projectPath: z.string().optional(),
+    analyzeTemplates: z.boolean().optional(),
+    generateReport: z.boolean().optional(),
+    optimizeTemplates: z.boolean().optional(),
+  }),
 };
 
 export type ToolName = keyof typeof toolSchemas;
@@ -134,30 +144,33 @@ export async function validateToolInput(
     return result;
   }
 
-  // Path validation
+  // Path validation (skip for tools that don't require projectPath)
   const { projectPath } = parseResult.data;
-  const fullPath = path.resolve(projectPath);
+  
+  if (projectPath) {
+    const fullPath = path.resolve(projectPath);
 
-  try {
-    // Check if path exists and is writable
-    await fs.ensureDir(fullPath);
-    await fs.access(fullPath, fs.constants.W_OK);
-  } catch (error) {
-    result.valid = false;
-    result.errors.push(`Cannot access or write to project path: ${fullPath}`);
-    return result;
-  }
-
-  // Check if directory is empty for base tool
-  if (toolName === 'create_nextjs_base') {
     try {
-      const files = await fs.readdir(fullPath);
-      const nonHiddenFiles = files.filter(file => !file.startsWith('.'));
-      if (nonHiddenFiles.length > 0) {
-        result.warnings.push(`Directory ${fullPath} is not empty. Existing files may be overwritten.`);
+      // Check if path exists and is writable
+      await fs.ensureDir(fullPath);
+      await fs.access(fullPath, fs.constants.W_OK);
+    } catch (error) {
+      result.valid = false;
+      result.errors.push(`Cannot access or write to project path: ${fullPath}`);
+      return result;
+    }
+
+    // Check if directory is empty for base tool
+    if (toolName === 'create_nextjs_base') {
+      try {
+        const files = await fs.readdir(fullPath);
+        const nonHiddenFiles = files.filter(file => !file.startsWith('.'));
+        if (nonHiddenFiles.length > 0) {
+          result.warnings.push(`Directory ${fullPath} is not empty. Existing files may be overwritten.`);
+        }
+      } catch {
+        // Directory doesn't exist yet, which is fine
       }
-    } catch {
-      // Directory doesn't exist yet, which is fine
     }
   }
 
@@ -166,6 +179,8 @@ export async function validateToolInput(
 
 export function getDefaultConfig(toolName: ToolName): Record<string, any> {
   const defaults: Record<ToolName, Record<string, any>> = {
+    setup_nextjs_project_wizard: {},
+    
     create_nextjs_base: {
       includeShadcn: true,
       includeAllComponents: true,
@@ -238,6 +253,11 @@ export function getDefaultConfig(toolName: ToolName): Record<string, any> {
         devExperience: true,
         internationalization: true,
       },
+    },
+    analyze_token_usage: {
+      analyzeTemplates: true,
+      generateReport: true,
+      optimizeTemplates: false,
     },
   };
 

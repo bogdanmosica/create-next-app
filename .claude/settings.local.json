@@ -23,7 +23,8 @@
       "Bash(pnpm add:*)",
       "Bash(pnpm test:*)",
       "Bash(if exist next_test_projects rmdir /s /q next_test_projects)",
-      "Bash(pnpm search:*)"
+      "Bash(pnpm search:*)",
+      "Bash(find:*)"
     ],
     "defaultMode": "acceptEdits",
     "additionalDirectories": [

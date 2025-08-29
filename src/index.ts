@@ -65,6 +65,7 @@ import { setupFormHandling } from "./tools/forms/form-handling.js";
 import { setupTestingSuite } from "./tools/dev/testing-suite.js";
 import { setupGitWorkflow } from "./tools/dev/git-workflow.js";
 import { setupInternationalization } from "./tools/i18n/internationalization.js";
+import { analyzeTokenUsage } from "./tools/analytics/token-analytics.js";
 import { validateToolInput, getDefaultConfig } from "./utils/tool-validator.js";
 
 class NextJsCreatorServer {
@@ -104,10 +105,26 @@ class NextJsCreatorServer {
   private setupToolHandlers(): void {
     this.server.setRequestHandler(ListToolsRequestSchema, async () => ({
       tools: [
+        // Interactive setup helper
+        {
+          name: "setup_nextjs_project_wizard",
+          description: "Interactive wizard that asks user about their Next.js project preferences and creates a customized application based on their choices. Use this when user says 'create a Next.js app' without specifying features.",
+          inputSchema: {
+            type: "object",
+            properties: {
+              projectPath: {
+                type: "string",
+                description: "The path where the Next.js project should be created",
+              },
+            },
+            required: ["projectPath"],
+          },
+        },
+
         // Main orchestrator tool (backward compatible)
         {
           name: "create_nextjs_app",
-          description: "Creates a complete Next.js SaaS application with all features (orchestrates other tools)",
+          description: "Creates a customizable Next.js SaaS application. Ask user which features they want: core (required), database, authentication, payments, teamManagement, devExperience, internationalization. Default is all enabled.",
           inputSchema: {
             type: "object",
             properties: {
@@ -140,7 +157,7 @@ class NextJsCreatorServer {
         // Core foundation tools
         {
           name: "create_nextjs_base",
-          description: "Creates basic Next.js application with TypeScript, Tailwind, and optional shadcn/ui",
+          description: "Creates basic Next.js application with TypeScript and Tailwind. Ask user if they want shadcn/ui components and whether to include all components or just basics.",
           inputSchema: {
             type: "object",
             properties: {
@@ -339,6 +356,22 @@ class NextJsCreatorServer {
             required: ["projectPath"],
           },
         },
+
+        // Analytics tools
+        {
+          name: "analyze_token_usage",
+          description: "Analyzes token usage of MCP templates and provides optimization recommendations for improving LLM efficiency",
+          inputSchema: {
+            type: "object",
+            properties: {
+              projectPath: { type: "string", description: "Optional: Path to save detailed report (default: current directory)" },
+              analyzeTemplates: { type: "boolean", description: "Analyze template files for token efficiency (default: true)" },
+              generateReport: { type: "boolean", description: "Generate detailed markdown report (default: true)" },
+              optimizeTemplates: { type: "boolean", description: "Show template optimization suggestions (default: false)" },
+            },
+            required: [],
+          },
+        },
       ] as Tool[],
     }));
 
@@ -372,6 +405,10 @@ class NextJsCreatorServer {
         let result: string;
         
         switch (name) {
+          case "setup_nextjs_project_wizard":
+            result = this.createProjectWizardResponse(config.projectPath);
+            break;
+
           case "create_nextjs_app":
             // Keep existing orchestrator functionality
             result = await this.createNextJsApp(config.projectPath, config.projectName);
@@ -431,6 +468,10 @@ class NextJsCreatorServer {
             
           case "setup_internationalization":
             result = await setupInternationalization(config as any);
+            break;
+
+          case "analyze_token_usage":
+            result = await analyzeTokenUsage(config as any);
             break;
 
           default:
@@ -757,6 +798,79 @@ class NextJsCreatorServer {
       
       throw new Error(`❌ Failed at step: "${currentStep}"\n\n🔍 Error Details: ${errorMsg}\n\n📍 Project Path: ${fullPath}\n\n✅ Completed Steps: ${steps.slice(0, -1).map((step, i) => `${i + 1}. ${step}`).join('\n')}\n\n💡 Tip: Check the console logs above for more detailed debug information.`);
     }
+  }
+
+  private createProjectWizardResponse(projectPath: string): string {
+    return `🚀 **Next.js Project Setup Wizard**
+
+I'll help you create a customized Next.js project! Let me know which features you'd like to include:
+
+## 🏗️ **Core Features** (Always Included)
+- ✅ Next.js 15+ with TypeScript
+- ✅ Tailwind CSS
+- ✅ App Router
+
+## 🎨 **UI Components**
+- **shadcn/ui**: Beautiful, accessible components
+  - Include all components? (recommended for full toolkit)
+  - Or just basics? (button, input, card, etc.)
+
+## 💾 **Database & Environment**
+- **Database**: PostgreSQL with Drizzle ORM
+- **Environment**: Type-safe environment variables with T3 Env
+
+## 🔐 **Authentication**
+- **JWT Authentication**: Secure user login/signup with session management
+- **Protected Routes**: Middleware for route protection
+
+## 💳 **Payments** (requires authentication)
+- **Stripe Integration**: Subscription and one-time payments
+- **Customer Portal**: Self-service billing management
+- **Webhooks**: Secure payment event handling
+
+## 👥 **Team Management** (requires database + auth)
+- **Multi-tenant**: Team creation and management
+- **Role-based permissions**: Admin, member, viewer roles
+- **Activity logging**: Track team actions
+
+## 🛠️ **Development Experience**
+- **Testing**: Vitest (unit) + Playwright (E2E) + MSW (mocking)
+- **Linting**: Biome (faster than ESLint)
+- **Git Workflow**: Hooks, commit standards, lint-staged
+- **Forms**: React Hook Form + Zod validation + React Query
+
+## 🌍 **Internationalization**
+- **Multi-language**: Support for 6+ languages
+- **Dynamic routing**: Automatic locale-based routing
+- **Translated components**: Auth forms and UI in multiple languages
+
+---
+
+**How to proceed:**
+1. Tell me which features you want (e.g., "I want core + database + authentication")
+2. Or use: \`create_nextjs_app\` with specific features:
+   \`\`\`
+   create_nextjs_app({
+     projectPath: "${projectPath}",
+     features: {
+       core: true,
+       database: true,
+       authentication: true,
+       payments: false,
+       teamManagement: false,
+       devExperience: true,
+       internationalization: false
+     }
+   })
+   \`\`\`
+
+**Quick options:**
+- "**Minimal**": Just core + shadcn/ui
+- "**Starter**": Core + database + auth + testing
+- "**Full SaaS**": Everything included
+- "**Custom**": Tell me exactly what you want
+
+What would you like to include in your Next.js project?`;
   }
 
   async run(): Promise<void> {

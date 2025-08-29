@@ -53,7 +53,7 @@ export async function setupStripePayments(config: StripePaymentsConfig): Promise
     console.error(`[STEP 1/6] ${step1}`);
     
     await runCommand("pnpm add stripe @stripe/stripe-js", fullPath);
-    await runCommand("pnpm add -D stripe-event-types", fullPath);
+    await runCommand("pnpm add -D stripe-event-types @stripe/react-stripe-js @stripe/stripe-js", fullPath);
     
     console.error(`[STEP 1/6] ✅ Completed: ${step1}`);
 
