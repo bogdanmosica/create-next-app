@@ -49,7 +49,8 @@
       "mcp__nextjs-saas__create_nextjs_app",
       "Read(//d/Projects/starter-test/**)",
       "mcp__nextjs-saas__setup_nextjs_project_wizard",
-      "Read(//d/Projects/**)"
+      "Read(//d/Projects/**)",
+      "Bash(npm test:*)"
     ],
     "defaultMode": "acceptEdits",
     "additionalDirectories": [
