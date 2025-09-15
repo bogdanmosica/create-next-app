@@ -15,6 +15,8 @@ import { ConfigManager } from '../utils/config-manager.js';
 import { DependencyResolver } from '../utils/dependency-resolver.js';
 import { EnhancedErrorHandler } from '../utils/error-handler.js';
 import { getToolRegistry } from '../core/tool-registry.js';
+import { ContractTestRunner } from './contract-tests.js';
+import { IntegrationTestRunner } from './integration-tests.js';
 
 export interface TestResult {
   name: string;
@@ -48,6 +50,8 @@ export class MCPServerTestRunner {
     console.log('🧪 Starting MCP Server Test Suite...\n');
 
     const suites: TestSuite[] = [
+      await this.runContractTests(),
+      await this.runIntegrationTests(),
       await this.runConfigurationTests(),
       await this.runToolOrchestrationTests(),
       await this.runErrorHandlingTests(),
@@ -58,6 +62,92 @@ export class MCPServerTestRunner {
 
     this.printTestSummary(suites);
     return suites;
+  }
+
+  /**
+   * Test contract validation (T006-T008)
+   */
+  async runContractTests(): Promise<TestSuite> {
+    const suiteName = 'Contract Validation (T006-T008)';
+    const tests: TestResult[] = [];
+    const suiteStart = performance.now();
+
+    console.log(`📋 Running ${suiteName} Tests...`);
+
+    // Run contract tests using the dedicated contract test runner
+    const contractRunner = new ContractTestRunner();
+    const contractResults = await contractRunner.runAllContractTests();
+
+    // Convert contract test results to our TestResult format
+    contractResults.forEach(result => {
+      tests.push({
+        name: result.name,
+        success: result.passed,
+        duration: 0, // Contract tests don't track individual durations
+        error: result.error,
+        details: result.details
+      });
+    });
+
+    const suiteDuration = performance.now() - suiteStart;
+    const passCount = tests.filter(t => t.success).length;
+    const failCount = tests.filter(t => !t.success).length;
+
+    return {
+      name: suiteName,
+      tests,
+      totalDuration: suiteDuration,
+      passCount,
+      failCount
+    };
+  }
+
+  /**
+   * Test integration workflows (T009-T013)
+   */
+  async runIntegrationTests(): Promise<TestSuite> {
+    const suiteName = 'Integration Workflows (T009-T013)';
+    const tests: TestResult[] = [];
+    const suiteStart = performance.now();
+
+    console.log(`📋 Running ${suiteName} Tests...`);
+
+    // Run integration tests using the dedicated integration test runner
+    const integrationRunner = new IntegrationTestRunner('./test-output/integration');
+    
+    try {
+      const integrationResults = await integrationRunner.runAllIntegrationTests();
+
+      // Convert integration test results to our TestResult format
+      integrationResults.forEach(result => {
+        tests.push({
+          name: result.name,
+          success: result.passed,
+          duration: result.duration,
+          error: result.error,
+          details: result.details
+        });
+      });
+    } catch (error) {
+      tests.push({
+        name: 'Integration Test Suite',
+        success: false,
+        duration: 0,
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+
+    const suiteDuration = performance.now() - suiteStart;
+    const passCount = tests.filter(t => t.success).length;
+    const failCount = tests.filter(t => !t.success).length;
+
+    return {
+      name: suiteName,
+      tests,
+      totalDuration: suiteDuration,
+      passCount,
+      failCount
+    };
   }
 
   /**
