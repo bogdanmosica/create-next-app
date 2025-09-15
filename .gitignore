@@ -48,3 +48,6 @@ test-output/
 next_test_projects/
 **/next_test_projects/
 test_projects_*
+
+# Windows null device redirection file
+nul

@@ -1,0 +1,70 @@
+{
+  "database": {
+    "defaultProvider": "postgresql",
+    "supportedProviders": [
+      "postgresql",
+      "mysql",
+      "sqlite"
+    ]
+  },
+  "internationalization": {
+    "defaultLanguages": [
+      "en",
+      "es",
+      "fr",
+      "de",
+      "ja",
+      "zh"
+    ],
+    "supportedLanguages": {
+      "en": "English",
+      "es": "Spanish",
+      "fr": "French",
+      "de": "German",
+      "ja": "Japanese",
+      "zh": "Chinese (Simplified)",
+      "pt": "Portuguese",
+      "it": "Italian",
+      "ru": "Russian",
+      "ar": "Arabic",
+      "hi": "Hindi",
+      "ko": "Korean",
+      "nl": "Dutch",
+      "sv": "Swedish",
+      "da": "Danish",
+      "no": "Norwegian",
+      "fi": "Finnish",
+      "pl": "Polish",
+      "tr": "Turkish",
+      "he": "Hebrew"
+    },
+    "includeAuthForms": true,
+    "includeRouting": true
+  },
+  "linting": {
+    "defaultTool": "biome",
+    "supportedTools": [
+      "biome",
+      "eslint",
+      "none"
+    ],
+    "includeCustomRules": true
+  },
+  "development": {
+    "defaultPackageManager": "pnpm",
+    "includeTesting": true,
+    "includeGitHooks": true
+  },
+  "ui": {
+    "defaultFramework": "tailwind",
+    "includeComponents": true,
+    "componentLibrary": "shadcn"
+  },
+  "_comments": {
+    "database": "Database configuration - choose provider and supported options",
+    "internationalization": "I18n settings - languages, routing, and form localization",
+    "linting": "Code quality tools - choose between Biome, ESLint, or none",
+    "development": "Development workflow preferences",
+    "ui": "UI framework and component library choices"
+  }
+}

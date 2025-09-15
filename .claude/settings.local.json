@@ -34,7 +34,22 @@
       "Read(D:\\Projects\\test-minimal-i18n/**)",
       "Read(D:\\Projects\\test-minimal-i18n/**)",
       "Read(D:\\Projects\\test-minimal-i18n/**)",
-      "Read(D:\\Projects\\test-minimal-i18n/**)"
+      "Read(D:\\Projects\\test-minimal-i18n/**)",
+      "Bash(npm test)",
+      "Bash(del test-transaction-system.js)",
+      "Bash(del test-error-handling.js)",
+      "Bash(npm run test:cleanup:*)",
+      "Bash(npx shadcn:*)",
+      "Read(//d/tmp/**)",
+      "Bash(del test-shadcn-options.js)",
+      "WebFetch(domain:authjs.dev)",
+      "Bash(npm --version)",
+      "Bash(pnpm:*)",
+      "Bash(git --version)",
+      "mcp__nextjs-saas__create_nextjs_app",
+      "Read(//d/Projects/starter-test/**)",
+      "mcp__nextjs-saas__setup_nextjs_project_wizard",
+      "Read(//d/Projects/**)"
     ],
     "defaultMode": "acceptEdits",
     "additionalDirectories": [

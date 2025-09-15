@@ -83,7 +83,7 @@ export const validationSchemas = {
       message: "Passwords do not match",
     }),
   required: (field: string) => z.string().min(1, \`\${field} is required\`),
-  optionalString: z.string().optional(),
+  optionalString: z.string().optional().or(z.literal("")),
   url: z.string().url("Please enter a valid URL"),
   phone: z.string().regex(/^\\+?[1-9]\\d{1,14}$/, "Please enter a valid phone number"),
 };`;

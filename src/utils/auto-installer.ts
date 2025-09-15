@@ -15,9 +15,8 @@ export interface PackageGroup {
 export const packageConfigs: Record<string, PackageGroup> = {
   nextjs_base: {
     // Handled by create-next-app command
-    commands: [
-      "npx create-next-app@latest . --typescript --tailwind --app --use-pnpm --no-eslint --yes"
-    ]
+    // Note: The actual command is dynamically determined in the tool based on project path
+    commands: []
   },
   
   biome_linting: {

@@ -7,7 +7,7 @@
 // Auth templates
 export const authMiddlewareTemplate = `import { z } from 'zod';
 import { TeamDataWithMembers, User } from '@/models/schema';
-import { getTeamForUser, getUser } from '@/lib/db/queries';
+import { getTeamForUser, getUser } from '@/libs/db/queries';
 import { redirect } from 'next/navigation';
 
 export type ActionState = {
@@ -175,7 +175,7 @@ export const dbQueriesTemplate = `import { desc, and, eq } from 'drizzle-orm';
 import { db } from './drizzle';
 import { activityLogs, teamMembers, teams, users } from '@/models/schema';
 import { cookies } from 'next/headers';
-import { verifyToken } from '@/lib/auth/session';
+import { verifyToken } from '@/libs/auth/session';
 
 export async function getUser() {
  const sessionCookie = (await cookies()).get('session');
@@ -211,11 +211,12 @@ export async function getUser() {
 
 export async function getTeamForUser(userId: string) {
  // First get the team
+ const userIdInt = parseInt(userId, 10);
  const teamResult = await db
  .select()
  .from(teams)
  .innerJoin(teamMembers, eq(teams.id, teamMembers.teamId))
- .where(eq(teamMembers.userId, userId))
+ .where(eq(teamMembers.userId, userIdInt))
  .limit(1);
 
  if (teamResult.length === 0) {
@@ -368,7 +369,7 @@ export type TeamDataWithMembers = Team & {
 export const dbSeedTemplate = `import { stripe } from '../payments/stripe';
 import { db } from './drizzle';
 import { users, teams, teamMembers } from '@/models/schema';
-import { hashPassword } from '@/lib/auth/session';
+import { hashPassword } from '@/libs/auth/session';
 
 async function createStripeProducts() {
  console.log('Creating Stripe products and prices...');
@@ -516,7 +517,7 @@ export const paymentsActionsTemplate = `'use server';
 
 import { redirect } from 'next/navigation';
 import { createCheckoutSession, createCustomerPortalSession } from './stripe';
-import { withTeam } from '@/lib/auth/middleware';
+import { withTeam } from '@/libs/auth/middleware';
 
 export const checkoutAction = withTeam(async (formData, team) => {
  const priceId = formData.get('priceId') as string;
@@ -535,10 +536,10 @@ import {
  getTeamByStripeCustomerId,
  getUser,
  updateTeamSubscription
-} from '@/lib/db/queries';
+} from '@/libs/db/queries';
 
 export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
- apiVersion: '2025-08-27.basil'
+ apiVersion: '2024-06-20'
 });
 
 export async function createCheckoutSession({

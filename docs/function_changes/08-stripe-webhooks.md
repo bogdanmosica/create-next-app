@@ -33,7 +33,7 @@ project/
 │       └── webhooks/
 │           └── stripe/
 │               └── route.ts            # Webhook API endpoint
-├── lib/
+├── libs/
 │   └── payments/
 │       ├── webhook-handlers.ts         # Event processing logic
 │       ├── webhook-validation.ts       # Security and validation
@@ -86,9 +86,9 @@ project/
 ### Webhook API Endpoint
 ```typescript
 // app/api/webhooks/stripe/route.ts
-import { stripe } from '@/lib/payments/stripe-config';
-import { processWebhookEvent } from '@/lib/payments/webhook-handlers';
-import { validateWebhookSignature } from '@/lib/payments/webhook-validation';
+import { stripe } from '@/libs/payments/stripe-config';
+import { processWebhookEvent } from '@/libs/payments/webhook-handlers';
+import { validateWebhookSignature } from '@/libs/payments/webhook-validation';
 
 export async function POST(request: Request) {
   const body = await request.text();
@@ -112,7 +112,7 @@ export async function POST(request: Request) {
 
 ### Event Handlers
 ```typescript
-// lib/payments/webhook-handlers.ts
+// libs/payments/webhook-handlers.ts
 export async function processWebhookEvent(event: Stripe.Event): Promise<void> {
   switch (event.type) {
     case 'checkout.session.completed':
@@ -136,7 +136,7 @@ export async function processWebhookEvent(event: Stripe.Event): Promise<void> {
 
 ### Customer Portal
 ```typescript
-// lib/payments/customer-portal.ts
+// libs/payments/customer-portal.ts
 export async function createPortalSession(customerId: string, returnUrl: string) {
   return await stripe.billingPortal.sessions.create({
     customer: customerId,
@@ -162,7 +162,7 @@ export async function createPortalAction(formData: FormData) {
 
 ### Webhook Validation
 ```typescript
-// lib/payments/webhook-validation.ts
+// libs/payments/webhook-validation.ts
 import { stripe } from './stripe-config';
 
 export function validateWebhookSignature(body: string, signature: string): Stripe.Event {

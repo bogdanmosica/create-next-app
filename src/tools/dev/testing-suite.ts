@@ -87,9 +87,12 @@ export async function setupTestingSuite(config: TestingSuiteConfig): Promise<str
       const vitestConfig = createVitestConfig();
       await fs.writeFile(vitestConfigPath, vitestConfig);
       
-      // Create test setup file
+      // Create tests directory and setup file
+      const testsDir = path.join(fullPath, "tests");
+      await fs.ensureDir(testsDir);
+      
       const testSetup = createTestSetup();
-      await fs.writeFile(path.join(fullPath, "src/test-setup.ts"), testSetup);
+      await fs.writeFile(path.join(testsDir, "setup.ts"), testSetup);
       
       console.error(`[STEP 2/6] ✅ Completed: ${step2}`);
     }
@@ -115,7 +118,7 @@ export async function setupTestingSuite(config: TestingSuiteConfig): Promise<str
       steps.push(step4);
       console.error(`[STEP 4/6] ${step4}`);
       
-      const mockDir = path.join(fullPath, "src", "mocks");
+      const mockDir = path.join(fullPath, "tests", "mocks");
       await fs.ensureDir(mockDir);
       
       // Create MSW handlers
@@ -137,7 +140,7 @@ export async function setupTestingSuite(config: TestingSuiteConfig): Promise<str
     // Create test directories
     const testDirs = [
       path.join(fullPath, "__tests__", "components"),
-      path.join(fullPath, "__tests__", "lib"),
+      path.join(fullPath, "__tests__", "libs"),
       path.join(fullPath, "__tests__", "actions"),
       path.join(fullPath, "e2e")
     ];
@@ -157,7 +160,7 @@ export async function setupTestingSuite(config: TestingSuiteConfig): Promise<str
       
       if (projectState.hasAuthentication) {
         const authTest = createAuthTest();
-        await fs.writeFile(path.join(fullPath, "__tests__", "lib", "auth.test.ts"), authTest);
+        await fs.writeFile(path.join(fullPath, "__tests__", "libs", "auth.test.ts"), authTest);
       }
     }
     
@@ -208,7 +211,7 @@ export async function setupTestingSuite(config: TestingSuiteConfig): Promise<str
     const totalTime = ((Date.now() - startTime) / 1000).toFixed(2);
     console.error(`[SUCCESS] Testing suite setup completed in ${totalTime}s`);
 
-    return `🎉 Testing suite setup completed successfully!\n\n⏱️ Total time: ${totalTime}s\n\n✅ Completed steps:\n${steps.map((step, i) => `${i + 1}. ${step}`).join('\n')}\n\n🧪 **Testing Configuration:**\n${includeUnitTests ? '- **Unit Tests**: Vitest with React Testing Library\n' : ''}${includeE2ETests ? '- **E2E Tests**: Playwright for end-to-end testing\n' : ''}${includeMocking ? '- **API Mocking**: MSW (Mock Service Worker)\n' : ''}- **Test Coverage**: Built-in coverage reporting\n- **Test UI**: Interactive test runners available\n\n📋 **Available Test Scripts:**\n${Object.entries(newScripts).map(([script, command]) => `- \`pnpm ${script}\` - ${getScriptDescription(script)}`).join('\n')}\n\n📁 **Test Structure Created:**\n- \`__tests__/\` - Unit and integration tests\n- \`e2e/\` - End-to-end tests\n- \`src/mocks/\` - MSW mock handlers${includeUnitTests ? '\n- `src/test-setup.ts` - Test environment setup' : ''}\n- Test configuration files\n\n🔧 **Testing Features:**\n- **Component Testing**: Test React components in isolation\n- **Integration Testing**: Test component interactions\n- **API Testing**: Mock external services and APIs${projectState.hasAuthentication ? '\n- **Auth Testing**: Test authentication flows' : ''}${projectState.hasDatabase ? '\n- **Database Testing**: Test database operations' : ''}\n- **Visual Regression**: Playwright screenshot testing\n- **Accessibility Testing**: Built-in a11y checks\n\n💻 **Example Tests Included:**\n${includeUnitTests ? '- Button component test (demonstrates component testing)\n' : ''}${includeUnitTests && projectState.hasAuthentication ? '- Auth utility tests (demonstrates unit testing)\n' : ''}${includeE2ETests ? '- Homepage E2E test (demonstrates navigation testing)\n' : ''}${includeE2ETests && projectState.hasAuthentication ? '- Auth flow E2E test (demonstrates user workflows)\n' : ''}\n🚀 **Getting Started:**\n\n1. **Run unit tests**: \`pnpm test\`\n2. **Run E2E tests**: \`pnpm test:e2e\`\n3. **View test UI**: \`pnpm test:ui\`\n4. **Generate coverage**: \`pnpm test:coverage\`\n\n💡 **Best Practices Included:**\n- Test utilities for common patterns\n- Mock setup for external dependencies\n- Example tests showing testing patterns\n- Coverage configuration\n- CI/CD ready test scripts\n\n⚡ **Performance Notes:**\n- Vitest runs tests in parallel for speed\n- Playwright uses multiple browsers efficiently\n- MSW provides fast API mocking without network calls\n- Tests are optimized for development workflow\n\n📚 **Documentation:** Check the generated test files for detailed examples and patterns for testing your specific application features.`;
+    return `🎉 Testing suite setup completed successfully!\n\n⏱️ Total time: ${totalTime}s\n\n✅ Completed steps:\n${steps.map((step, i) => `${i + 1}. ${step}`).join('\n')}\n\n🧪 **Testing Configuration:**\n${includeUnitTests ? '- **Unit Tests**: Vitest with React Testing Library\n' : ''}${includeE2ETests ? '- **E2E Tests**: Playwright for end-to-end testing\n' : ''}${includeMocking ? '- **API Mocking**: MSW (Mock Service Worker)\n' : ''}- **Test Coverage**: Built-in coverage reporting\n- **Test UI**: Interactive test runners available\n\n📋 **Available Test Scripts:**\n${Object.entries(newScripts).map(([script, command]) => `- \`pnpm ${script}\` - ${getScriptDescription(script)}`).join('\n')}\n\n📁 **Test Structure Created:**\n- \`__tests__/\` - Unit and integration tests\n- \`e2e/\` - End-to-end tests\n- \`tests/mocks/\` - MSW mock handlers${includeUnitTests ? '\n- `tests/setup.ts` - Test environment setup' : ''}\n- Test configuration files\n\n🔧 **Testing Features:**\n- **Component Testing**: Test React components in isolation\n- **Integration Testing**: Test component interactions\n- **API Testing**: Mock external services and APIs${projectState.hasAuthentication ? '\n- **Auth Testing**: Test authentication flows' : ''}${projectState.hasDatabase ? '\n- **Database Testing**: Test database operations' : ''}\n- **Visual Regression**: Playwright screenshot testing\n- **Accessibility Testing**: Built-in a11y checks\n\n💻 **Example Tests Included:**\n${includeUnitTests ? '- Button component test (demonstrates component testing)\n' : ''}${includeUnitTests && projectState.hasAuthentication ? '- Auth utility tests (demonstrates unit testing)\n' : ''}${includeE2ETests ? '- Homepage E2E test (demonstrates navigation testing)\n' : ''}${includeE2ETests && projectState.hasAuthentication ? '- Auth flow E2E test (demonstrates user workflows)\n' : ''}\n🚀 **Getting Started:**\n\n1. **Run unit tests**: \`pnpm test\`\n2. **Run E2E tests**: \`pnpm test:e2e\`\n3. **View test UI**: \`pnpm test:ui\`\n4. **Generate coverage**: \`pnpm test:coverage\`\n\n💡 **Best Practices Included:**\n- Test utilities for common patterns\n- Mock setup for external dependencies\n- Example tests showing testing patterns\n- Coverage configuration\n- CI/CD ready test scripts\n\n⚡ **Performance Notes:**\n- Vitest runs tests in parallel for speed\n- Playwright uses multiple browsers efficiently\n- MSW provides fast API mocking without network calls\n- Tests are optimized for development workflow\n\n📚 **Documentation:** Check the generated test files for detailed examples and patterns for testing your specific application features.`;
 
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : String(error);
@@ -245,14 +248,14 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'jsdom',
-    setupFiles: ['./src/test-setup.ts'],
+    setupFiles: ['./tests/setup.ts'],
     css: true,
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
       exclude: [
         'node_modules/',
-        'src/test-setup.ts',
+        'tests/setup.ts',
         '**/*.d.ts',
         '**/*.config.*',
         'build/',
@@ -272,7 +275,6 @@ export default defineConfig({
     alias: {
       '@': path.resolve(__dirname, './'),
       '@/components': path.resolve(__dirname, './components'),
-      '@/lib': path.resolve(__dirname, './lib'),
       '@/libs': path.resolve(__dirname, './libs'),
       '@/actions': path.resolve(__dirname, './actions'),
       '@/models': path.resolve(__dirname, './models'),
@@ -706,7 +708,7 @@ function createAuthTest(): string {
  */
 
 import { describe, it, expect, vi } from 'vitest';
-import { createSession, verifySession } from '@/lib/auth/session';
+import { createSession, verifySession } from '@/libs/auth/session';
 
 // Mock the environment
 vi.mock('@/libs/env', () => ({
@@ -769,7 +771,7 @@ describe('Auth Session', () => {
 
 describe('Password Hashing', () => {
   // Only include if password hashing is available
-  const { hashPassword, verifyPassword } = await import('@/lib/auth/password')
+  const { hashPassword, verifyPassword } = await import('@/libs/auth/password')
     .catch(() => ({ hashPassword: null, verifyPassword: null }));
 
   if (hashPassword && verifyPassword) {

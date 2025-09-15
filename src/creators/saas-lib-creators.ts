@@ -23,7 +23,7 @@ export async function createSaaSMiddleware(projectPath: string): Promise<void> {
 }
 
 export async function createSaaSLibStructure(projectPath: string): Promise<void> {
-  const libPath = path.join(projectPath, "lib");
+  const libPath = path.join(projectPath, "libs");
   
   // Create directory structure
   await fs.ensureDir(path.join(libPath, "auth"));
@@ -102,8 +102,8 @@ export async function updatePackageJsonForSaaS(projectPath: string): Promise<voi
   // Add SaaS-specific scripts
   packageJson.scripts = {
     ...packageJson.scripts,
-    "db:setup": "npx tsx lib/db/setup.ts",
-    "db:seed": "npx tsx lib/db/seed.ts",
+    "db:setup": "npx tsx libs/db/setup.ts",
+    "db:seed": "npx tsx libs/db/seed.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio"

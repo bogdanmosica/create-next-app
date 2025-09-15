@@ -291,7 +291,7 @@ export default async function RootLayout({
     // If no root page was moved, create a basic page.tsx in [locale] root
     if (!rootPageExists) {
       const localePageContent = `import { useTranslations } from 'next-intl';
-import { Link } from '@/lib/navigation';
+import { Link } from '@/libs/navigation';
 
 export default function HomePage() {
   const t = useTranslations('navigation');
@@ -543,7 +543,7 @@ const message = t('password_min', { min: 8 });
 
 ### Navigation with Locale
 \`\`\`tsx
-import { Link } from '@/lib/navigation';
+import { Link } from '@/libs/navigation';
 
 export function Navigation() {
   return (

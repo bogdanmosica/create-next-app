@@ -34,7 +34,7 @@ interface FormHandlingConfig {
 ### Generated Project Structure
 ```
 project/
-├── lib/
+├── libs/
 │   └── forms/
 │       ├── hooks.ts                    # Custom form hooks and utilities
 │       ├── utils.ts                    # Helper functions for forms
@@ -96,7 +96,7 @@ project/
 
 ### Custom Form Hooks
 ```typescript
-// lib/forms/hooks.ts
+// libs/forms/hooks.ts
 export function useZodForm<T extends FieldValues>(
   schema: z.ZodSchema<T>,
   options?: Omit<UseFormProps<T>, 'resolver'>
@@ -200,7 +200,7 @@ export const profileSchema = z.object({
 
 ### React Query Integration
 ```typescript
-// lib/forms/query-hooks.ts
+// libs/forms/query-hooks.ts
 export function useApiMutation<TData, TError, TVariables>(
   endpoint: string,
   method: 'POST' | 'PUT' | 'PATCH' | 'DELETE' = 'POST',

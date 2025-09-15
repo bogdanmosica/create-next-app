@@ -20,7 +20,7 @@ your-saas-app/
 │   ├── ui/                # shadcn/ui components (auto-generated)
 │   ├── .gitkeep
 │   └── README.md          # Usage examples
-├── lib/                   # Core Application Logic
+├── libs/                   # Core Application Logic
 │   ├── auth/              # Authentication System
 │   │   ├── middleware.ts  # Action validation & user context
 │   │   └── session.ts     # JWT management & password hashing
@@ -51,7 +51,7 @@ your-saas-app/
 
 ## Feature Breakdown
 
-### 1. Authentication System (`lib/auth/`)
+### 1. Authentication System (`libs/auth/`)
 
 #### `session.ts` - JWT Session Management
 - **Password Hashing**: bcrypt with 10 salt rounds
@@ -73,7 +73,7 @@ your-saas-app/
 - **Team Context**: Team-based action middleware
 - **Error Handling**: Standardized error responses
 
-### 2. Database Layer (`lib/db/`)
+### 2. Database Layer (`libs/db/`)
 
 #### `schema.ts` - Database Schema
 Complete multi-tenant SaaS schema:
@@ -115,7 +115,7 @@ Complete multi-tenant SaaS schema:
 - **Webhook Setup**: Development webhook configuration
 - **Environment Validation**: Required variable checks
 
-### 3. Payment System (`lib/payments/`)
+### 3. Payment System (`libs/payments/`)
 
 #### `stripe.ts` - Payment Integration
 - **Checkout Sessions**: Subscription flow with trials

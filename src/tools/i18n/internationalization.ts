@@ -8,6 +8,7 @@ import fs from "fs-extra";
 import path from "path";
 import { runCommand } from "../../runners/command-runner.js";
 import { detectProjectState } from "../../utils/dependency-detector.js";
+import { ConfigManager } from "../../utils/config-manager.js";
 
 export interface InternationalizationConfig {
   projectPath: string;
@@ -17,12 +18,24 @@ export interface InternationalizationConfig {
 }
 
 export async function setupInternationalization(config: InternationalizationConfig): Promise<string> {
+  // Get default languages from configuration manager
+  const i18nConfig = ConfigManager.getI18nConfig();
+  
   const {
     projectPath,
-    languages = ['en', 'ro'],
-    includeRouting = true,
-    includeAuthForms = true
+    languages = i18nConfig.defaultLanguages,
+    includeRouting = i18nConfig.includeRouting,
+    includeAuthForms = i18nConfig.includeAuthForms
   } = config;
+
+  // Validate provided languages
+  if (languages) {
+    const validation = ConfigManager.validateLanguages(languages);
+    if (validation.invalid.length > 0) {
+      console.error(`[WARNING] Unsupported languages: ${validation.invalid.join(', ')}`);
+      console.error(`[INFO] Supported languages: ${Object.keys(i18nConfig.supportedLanguages).join(', ')}`);
+    }
+  }
 
   console.error(`[DEBUG] Setting up internationalization at: ${projectPath}`);
   console.error(`[DEBUG] Config - Languages: ${languages.join(', ')}, Routing: ${includeRouting}, Auth Forms: ${includeAuthForms}`);
@@ -496,7 +509,7 @@ async function updateNextConfig(projectPath: string): Promise<void> {
 
   // Create new Next.js config with i18n support
   const nextConfigContent = `/** @type {import('next').NextConfig} */
-const withNextIntl = require('next-intl/plugin')('./i18n.ts');
+import withNextIntl from 'next-intl/plugin';
 
 const nextConfig = {
   // Existing Next.js configuration
@@ -522,7 +535,9 @@ const nextConfig = {
   },
 };
 
-module.exports = withNextIntl(nextConfig);
+const withI18n = withNextIntl('./i18n.ts');
+
+export default withI18n(nextConfig);
 `;
 
   await fs.writeFile(configPath, nextConfigContent);
@@ -614,7 +629,7 @@ export const { Link, redirect, usePathname, useRouter } = createLocalizedPathnam
 export { locales, pathnames };
 `;
 
-  const libDir = path.join(projectPath, "lib");
+  const libDir = path.join(projectPath, "libs");
   await fs.ensureDir(libDir);
   await fs.writeFile(path.join(libDir, "navigation.ts"), navigationContent);
 }
@@ -629,7 +644,7 @@ async function createI18nComponents(projectPath: string, languages: string[]): P
 'use client';
 
 import { useLocale } from 'next-intl';
-import { useRouter, usePathname } from '@/lib/navigation';
+import { useRouter, usePathname } from '@/libs/navigation';
 import { locales } from '@/i18n';
 import {
   Select,
@@ -743,7 +758,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Link } from '@/lib/navigation';
+import { Link } from '@/libs/navigation';
 
 interface LoginFormProps {
   onSubmit?: (data: { email: string; password: string }) => Promise<void>;
@@ -856,7 +871,7 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Link } from '@/lib/navigation';
+import { Link } from '@/libs/navigation';
 
 interface SignupFormProps {
   onSubmit?: (data: {
@@ -1076,7 +1091,7 @@ project/
 │   └── i18n.ts                       # TypeScript types for translations
 ├── locales/
 ${languages.map(lang => `│   ├── ${lang}.json                     # ${lang.toUpperCase()} translations`).join('\n')}
-├── lib/
+├── libs/
 │   └── navigation.ts                  # ${includeRouting ? 'Internationalized navigation utilities' : 'Ready for i18n navigation'}
 ├── components/
 │   ├── i18n/
@@ -1127,7 +1142,7 @@ import { LanguageSwitcher } from '@/components/i18n';
 <LanguageSwitcher />
 
 // Internationalized navigation${includeRouting ? `
-import { Link } from '@/lib/navigation';
+import { Link } from '@/libs/navigation';
 <Link href="/about">About Us</Link>  // Automatically localized` : `
 // Enable routing for internationalized navigation`}
 \`\`\`
@@ -1242,7 +1257,7 @@ app/about/page.tsx → app/[locale]/about/page.tsx
 ### 3. Use localized navigation:
 \`\`\`tsx
 // Replace next/link with localized Link
-import { Link } from '@/lib/navigation';
+import { Link } from '@/libs/navigation';
 \`\`\`
 
 🌍 **Supported Content**:

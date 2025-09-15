@@ -8,6 +8,7 @@ import fs from "fs-extra";
 import path from "path";
 import { runCommand } from "../../runners/command-runner.js";
 import { detectProjectState } from "../../utils/dependency-detector.js";
+import { DependencyResolver } from "../../utils/dependency-resolver.js";
 
 export interface TeamManagementConfig {
   projectPath: string;
@@ -53,18 +54,31 @@ export async function setupTeamManagement(config: TeamManagementConfig): Promise
     const projectState = await detectProjectState(projectPath);
     console.error(`[DEBUG] Project state:`, projectState);
 
-    // Check requirements
-    if (requireAuth && !projectState.hasAuthentication) {
-      throw new Error("Authentication is required for team management. Run setup_authentication_jwt first.");
-    }
-
-    if (requireDatabase && !projectState.hasDatabase) {
-      throw new Error("Database is required for team management. Run setup_drizzle_orm first.");
+    // Resolve dependencies using standardized resolver
+    const resolver = DependencyResolver.createResolver(projectPath, 'auto');
+    const requiredDeps = [];
+    
+    if (requireAuth) requiredDeps.push('authentication');
+    if (requireDatabase) requiredDeps.push('database');
+    
+    if (requiredDeps.length > 0) {
+      console.error(`[DEPENDENCY] Resolving requirements: ${requiredDeps.join(', ')}`);
+      
+      const depResult = await resolver.resolveDependencies(requiredDeps, projectState);
+      
+      if (!depResult.allResolved) {
+        const errorMessages = Object.values(depResult.results)
+          .map((r: any) => r.message)
+          .filter(Boolean);
+        console.error(`[DEPENDENCY] Auto-resolution completed with messages: ${errorMessages.join('; ')}`);
+      } else {
+        console.error(`[DEPENDENCY] ✅ All dependencies resolved successfully`);
+      }
     }
 
     // Check for existing team setup by looking for more specific indicators
     const teamActionsPath = path.join(projectPath, "actions", "team.ts");
-    const teamQueriesPath = path.join(projectPath, "lib", "db", "team-queries.ts");
+    const teamQueriesPath = path.join(projectPath, "libs", "db", "team-queries.ts");
     
     if (await fs.pathExists(teamActionsPath) && await fs.pathExists(teamQueriesPath)) {
       throw new Error("Team management appears to already be set up (team actions and queries exist).");
@@ -385,7 +399,7 @@ async function createTeamQueries(projectPath: string, options: { includeRoles: b
  * @description Database operations for teams, members, and activity logging
  */
 
-import { db } from '@/lib/db.js';
+import { db } from '@/libs/db.js';
 import { eq, and, desc, count } from 'drizzle-orm';
 import { 
   teams, 
@@ -638,7 +652,7 @@ export async function isTeamMember(userId: string, teamId: string): Promise<bool
 }
 `;
 
-  const libDbDir = path.join(projectPath, "lib", "db");
+  const libDbDir = path.join(projectPath, "libs", "db");
   await fs.ensureDir(libDbDir);
   await fs.writeFile(path.join(libDbDir, "team-queries.ts"), queriesContent);
 }
@@ -768,7 +782,7 @@ async function createTeamActions(projectPath: string, options: { includeRoles: b
 'use server';
 
 import { revalidatePath, redirect } from 'next/cache';
-import { getUser } from '@/lib/auth/session.js';
+import { getUser } from '@/libs/auth/session.js';
 import {
   createTeam as dbCreateTeam,
   updateTeam as dbUpdateTeam,
@@ -782,7 +796,7 @@ import {
   generateTeamSlug,
   hasTeamPermission,${options.includeActivityLogs ? `
   logTeamActivity,` : ''}
-} from '@/lib/db/team-queries.js';
+} from '@/libs/db/team-queries.js';
 import {
   createTeamSchema,
   updateTeamSchema,
@@ -1440,7 +1454,7 @@ export function MemberList({ teamId, members, currentUserRole, canManageMembers 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Check, ChevronsUpDown, Plus } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn } from '@/libs/utils';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {

@@ -33,9 +33,9 @@ export async function createFolderStructure(
   const folders = [
     "actions",
     "components",
-    "lib",
-    "lib/constants",
-    "lib/db",
+    "libs",
+    "libs/constants",
+    "libs/db",
     "types"
   ];
 

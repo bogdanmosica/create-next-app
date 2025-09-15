@@ -10,6 +10,7 @@ import { runCommand } from "../../runners/command-runner.js";
 import { createBiomeConfig } from "../../creators/config-creators.js";
 import { installPackages } from "../../utils/auto-installer.js";
 import { detectProjectState } from "../../utils/dependency-detector.js";
+import { ConfigManager } from "../../utils/config-manager.js";
 
 export interface BiomeLintingConfig {
   projectPath: string;
@@ -18,9 +19,18 @@ export interface BiomeLintingConfig {
 }
 
 export async function setupBiomeLinting(config: BiomeLintingConfig): Promise<string> {
+  // Get linting configuration from ConfigManager
+  const lintConfig = ConfigManager.getLintingConfig();
+  
+  // Check if Biome is the configured linter
+  if (lintConfig.defaultTool !== 'biome') {
+    console.error(`[WARNING] Default linting tool is ${lintConfig.defaultTool}, but setupBiomeLinting was called`);
+    console.error(`[INFO] To change default linter, update your MCP configuration`);
+  }
+  
   const {
     projectPath,
-    includeCustomRules = true,
+    includeCustomRules = lintConfig.includeCustomRules,
     strictMode = true
   } = config;
 

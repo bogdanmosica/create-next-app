@@ -10,6 +10,7 @@ import { runCommand } from "../../runners/command-runner.js";
 import { createDrizzleConfig } from "../../creators/config-creators.js";
 import { installPackages } from "../../utils/auto-installer.js";
 import { detectProjectState } from "../../utils/dependency-detector.js";
+import { ConfigManager } from "../../utils/config-manager.js";
 
 export interface DrizzleOrmConfig {
   projectPath: string;
@@ -18,11 +19,19 @@ export interface DrizzleOrmConfig {
 }
 
 export async function setupDrizzleOrm(config: DrizzleOrmConfig): Promise<string> {
+  // Get database configuration from ConfigManager
+  const dbConfig = ConfigManager.getDatabaseConfig();
+  
   const {
     projectPath,
-    provider = "postgresql",
+    provider = dbConfig.defaultProvider,
     includeExamples = true
   } = config;
+
+  // Validate provider
+  if (!ConfigManager.validateDatabaseProvider(provider)) {
+    throw new Error(`Unsupported database provider: ${provider}. Supported: ${dbConfig.supportedProviders.join(', ')}`);
+  }
 
   const fullPath = path.resolve(projectPath);
   const startTime = Date.now();
@@ -85,7 +94,7 @@ export async function setupDrizzleOrm(config: DrizzleOrmConfig): Promise<string>
     steps.push(step3);
     console.error(`[STEP 3/6] ${step3}`);
     
-    const libDbDir = path.join(fullPath, "lib", "db");
+    const libDbDir = path.join(fullPath, "libs", "db");
     await fs.ensureDir(libDbDir);
     
     // Create database connection file
@@ -147,7 +156,7 @@ export async function setupDrizzleOrm(config: DrizzleOrmConfig): Promise<string>
     packageJson.scripts = {
       ...packageJson.scripts,
       "db:generate": "drizzle-kit generate",
-      "db:migrate": "tsx lib/db/migrate.ts",
+      "db:migrate": "tsx libs/db/migrate.ts",
       "db:studio": "drizzle-kit studio",
       "db:push": "drizzle-kit push"
     };
@@ -158,7 +167,7 @@ export async function setupDrizzleOrm(config: DrizzleOrmConfig): Promise<string>
     const totalTime = ((Date.now() - startTime) / 1000).toFixed(2);
     console.error(`[SUCCESS] Drizzle ORM setup completed in ${totalTime}s`);
 
-    return `🎉 Drizzle ORM setup completed successfully!\n\n⏱️ Total time: ${totalTime}s\n\n✅ Completed steps:\n${steps.map((step, i) => `${i + 1}. ${step}`).join('\n')}\n\n🗄️ **Database Configuration:**\n- **Provider**: ${provider.charAt(0).toUpperCase() + provider.slice(1)}\n- **ORM**: Drizzle ORM with TypeScript support\n- **Migration System**: Built-in migration management\n- **Studio**: Drizzle Studio for database exploration${includeExamples ? '\n- **Example Schema**: User model with common fields' : '\n- **Basic Structure**: Ready for custom schemas'}\n\n📋 **Available Scripts:**\n- \`pnpm db:generate\` - Generate migration files\n- \`pnpm db:migrate\` - Run pending migrations\n- \`pnpm db:studio\` - Open Drizzle Studio\n- \`pnpm db:push\` - Push schema changes directly\n\n📁 **Files Created:**\n- \`drizzle.config.ts\` - Drizzle configuration\n- \`lib/db/index.ts\` - Database connection setup\n- \`lib/db/migrate.ts\` - Migration utilities\n- \`lib/db/migrations/\` - Migration files directory${includeExamples ? '\n- `models/user.ts` - Example user schema\n- `models/index.ts` - Schema exports' : '\n- `models/schema.ts` - Basic schema template'}\n\n⚙️ **Database Connection:**\n\`\`\`typescript\nimport { db } from './lib/db';\n\n// Query examples\nconst users = await db.select().from(userTable);\nconst user = await db.select().from(userTable).where(eq(userTable.id, 1));\n\`\`\`\n\n💡 **Next steps:**\n1. **Set up environment variables** with \`setup_environment_vars\`\n2. **Configure your ${provider} database** connection string\n3. **Generate your first migration**: \`pnpm db:generate\`\n4. **Run migrations**: \`pnpm db:migrate\`\n5. **Explore your database**: \`pnpm db:studio\`\n\n🔗 **Integration:**\n- Ready for authentication setup with \`setup_authentication_jwt\`\n- Compatible with team management via \`setup_team_management\`\n- Works with all other MCP tools\n\n📚 **Documentation:** Check the generated files for TypeScript examples and patterns.`;
+    return `🎉 Drizzle ORM setup completed successfully!\n\n⏱️ Total time: ${totalTime}s\n\n✅ Completed steps:\n${steps.map((step, i) => `${i + 1}. ${step}`).join('\n')}\n\n🗄️ **Database Configuration:**\n- **Provider**: ${provider.charAt(0).toUpperCase() + provider.slice(1)}\n- **ORM**: Drizzle ORM with TypeScript support\n- **Migration System**: Built-in migration management\n- **Studio**: Drizzle Studio for database exploration${includeExamples ? '\n- **Example Schema**: User model with common fields' : '\n- **Basic Structure**: Ready for custom schemas'}\n\n📋 **Available Scripts:**\n- \`pnpm db:generate\` - Generate migration files\n- \`pnpm db:migrate\` - Run pending migrations\n- \`pnpm db:studio\` - Open Drizzle Studio\n- \`pnpm db:push\` - Push schema changes directly\n\n📁 **Files Created:**\n- \`drizzle.config.ts\` - Drizzle configuration\n- \`libs/db/index.ts\` - Database connection setup\n- \`libs/db/migrate.ts\` - Migration utilities\n- \`libs/db/migrations/\` - Migration files directory${includeExamples ? '\n- `models/user.ts` - Example user schema\n- `models/index.ts` - Schema exports' : '\n- `models/schema.ts` - Basic schema template'}\n\n⚙️ **Database Connection:**\n\`\`\`typescript\nimport { db } from './libs/db';\n\n// Query examples\nconst users = await db.select().from(userTable);\nconst user = await db.select().from(userTable).where(eq(userTable.id, 1));\n\`\`\`\n\n💡 **Next steps:**\n1. **Set up environment variables** with \`setup_environment_vars\`\n2. **Configure your ${provider} database** connection string\n3. **Generate your first migration**: \`pnpm db:generate\`\n4. **Run migrations**: \`pnpm db:migrate\`\n5. **Explore your database**: \`pnpm db:studio\`\n\n🔗 **Integration:**\n- Ready for authentication setup with \`setup_authentication_jwt\`\n- Compatible with team management via \`setup_team_management\`\n- Works with all other MCP tools\n\n📚 **Documentation:** Check the generated files for TypeScript examples and patterns.`;
 
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : String(error);
@@ -301,7 +310,7 @@ async function runMigrations() {
   console.log('Running migrations...');
   
   try {
-    await migrate(db, { migrationsFolder: './lib/db/migrations' });
+    await migrate(db, { migrationsFolder: './libs/db/migrations' });
     console.log('✅ Migrations completed successfully!');
   } catch (error) {
     console.error('❌ Migration failed:', error);

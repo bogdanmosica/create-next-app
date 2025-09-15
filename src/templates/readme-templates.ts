@@ -3,7 +3,7 @@ export const actionsReadmeTemplate = `## Example of action
 > File name example \`./user.ts\`; we will take user as example, it can be anything, post, to do, article.
 \`\`\`typescript
 'use server'
-import { db } from '@/lib/db' // Your database client
+import { db } from '@/libs/db' // Your database client
 
 import { UserModel } from '@/types' // Your types folder
  
@@ -16,7 +16,7 @@ export async function createUser(data: UserModel) {
 
 \`\`\`typescript
 'use server'
-import { db } from '@/lib/db'
+import { db } from '@/libs/db'
  
 export async function fetchUsers() {
   const users = await db.user.findMany()
@@ -80,25 +80,25 @@ export function SelectExample() {
   );
 }
 \`\`\`
-> **IMPORTANT** if a constant like \`ObjectType\` in this example is used across all the other components it should be saved under \`lib/constants/object-type.ts\` in our case, that goes for any other constants.`;
+> **IMPORTANT** if a constant like \`ObjectType\` in this example is used across all the other components it should be saved under \`libs/constants/object-type.ts\` in our case, that goes for any other constants.`;
 
 export const libReadmeTemplate = `## Lib folder structure
 
 This folder contains utility functions, constants, and configurations.
 
 ### Constants
-Store shared constants in \`lib/constants/\` folder. For example:
-- \`lib/constants/object-type.ts\` - Object type enums
-- \`lib/constants/api-endpoints.ts\` - API endpoint constants
+Store shared constants in \`libs/constants/\` folder. For example:
+- \`libs/constants/object-type.ts\` - Object type enums
+- \`libs/constants/api-endpoints.ts\` - API endpoint constants
 
 ### Database
-- \`lib/db/\` - Database configuration and schema files
+- \`libs/db/\` - Database configuration and schema files
 - \`models/schema/\` - Drizzle schema definitions organized by domain
-- \`lib/db/migrations/\` - Database migration files
+- \`libs/db/migrations/\` - Database migration files
 
 ### Utils
-- \`lib/utils.ts\` - Utility functions (created by shadcn)
-- \`lib/validations.ts\` - Validation schemas (Zod recommended)`;
+- \`libs/utils.ts\` - Utility functions (created by shadcn)
+- \`libs/validations.ts\` - Validation schemas (Zod recommended)`;
 
 export const libDbReadmeTemplate = `> The folder structure and code split I expect.
 📂 db

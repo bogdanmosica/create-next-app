@@ -75,7 +75,7 @@ export const biomeConfigTemplate = {
               ":BLANK_LINE:",
               "@/hooks",
               ":BLANK_LINE:",
-              "@/lib",
+              "@/libs",
               ":BLANK_LINE:",
               "@/types",
               ":BLANK_LINE:",

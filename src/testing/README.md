@@ -178,7 +178,7 @@ Example failure output:
 ```
 ❌ Authentication System - FAILED (15.67s)
    ❌ Tool setup_authentication_jwt failed: Database is required
-   ❌ Expected file not found: lib/auth/session.ts
+   ❌ Expected file not found: libs/auth/session.ts
    ❌ Expected package not installed: jose
 ```
 

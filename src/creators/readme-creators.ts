@@ -11,9 +11,9 @@ export async function createComponentsReadme(projectPath: string): Promise<void>
 }
 
 export async function createLibReadme(projectPath: string): Promise<void> {
-  await fs.writeFile(path.join(projectPath, "lib", "README.md"), libReadmeTemplate);
+  await fs.writeFile(path.join(projectPath, "libs", "README.md"), libReadmeTemplate);
 }
 
 export async function createLibDbReadme(projectPath: string): Promise<void> {
-  await fs.writeFile(path.join(projectPath, "lib", "db", "README.md"), libDbReadmeTemplate);
+  await fs.writeFile(path.join(projectPath, "libs", "db", "README.md"), libDbReadmeTemplate);
 }

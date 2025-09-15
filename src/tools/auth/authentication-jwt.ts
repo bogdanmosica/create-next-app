@@ -1,6 +1,6 @@
 /**
- * @fileoverview JWT Authentication Setup Tool
- * @description Sets up JWT authentication with bcrypt password hashing and user management
+ * @fileoverview NextAuth.js Authentication Setup Tool
+ * @description Sets up NextAuth.js (Auth.js) authentication with credentials provider and database integration
  * Creates complete authentication system with session handling and user CRUD operations
  */
 
@@ -14,6 +14,7 @@ export interface AuthenticationJwtConfig {
   includePasswordHashing?: boolean;
   includeUserManagement?: boolean;
   requireDatabase?: boolean;
+  includeOAuthProviders?: boolean;
 }
 
 export async function setupAuthenticationJwt(config: AuthenticationJwtConfig): Promise<string> {
@@ -21,7 +22,8 @@ export async function setupAuthenticationJwt(config: AuthenticationJwtConfig): P
     projectPath,
     includePasswordHashing = true,
     includeUserManagement = true,
-    requireDatabase = true
+    requireDatabase = true,
+    includeOAuthProviders = false
   } = config;
 
   const fullPath = path.resolve(projectPath);
@@ -36,7 +38,7 @@ export async function setupAuthenticationJwt(config: AuthenticationJwtConfig): P
 
   // Check if authentication is already set up
   if (projectState.hasAuthentication) {
-    throw new Error("JWT authentication is already set up in this project. Authentication libraries are already installed.");
+    throw new Error("NextAuth.js authentication is already set up in this project. Authentication libraries are already installed.");
   }
 
   // Check database requirement
@@ -44,15 +46,15 @@ export async function setupAuthenticationJwt(config: AuthenticationJwtConfig): P
     throw new Error("Database setup required for authentication. Run 'setup_drizzle_orm' first to set up the database layer.");
   }
 
-  console.error(`[DEBUG] Starting JWT authentication setup at: ${fullPath}`);
+  console.error(`[DEBUG] Starting NextAuth.js authentication setup at: ${fullPath}`);
   
   try {
     // Step 1: Install authentication dependencies
-    const step1 = "Installing JWT authentication dependencies...";
+    const step1 = "Installing NextAuth.js authentication dependencies...";
     steps.push(step1);
-    console.error(`[STEP 1/6] ${step1}`);
+    console.error(`[STEP 1/7] ${step1}`);
     
-    const authPackages = ["jose", "zod"];
+    const authPackages = ["next-auth@beta", "zod"];
     if (includePasswordHashing) {
       authPackages.push("bcryptjs");
     }
@@ -67,67 +69,97 @@ export async function setupAuthenticationJwt(config: AuthenticationJwtConfig): P
       await runCommand(`pnpm add -D ${devPackages.join(' ')}`, fullPath);
     }
     
-    console.error(`[STEP 1/6] ✅ Completed: ${step1}`);
+    console.error(`[STEP 1/7] ✅ Completed: ${step1}`);
 
-    // Step 2: Create JWT session utilities
-    const step2 = "Creating JWT session management utilities...";
+    // Step 2: Create NextAuth.js configuration
+    const step2 = "Creating NextAuth.js configuration...";
     steps.push(step2);
-    console.error(`[STEP 2/6] ${step2}`);
+    console.error(`[STEP 2/7] ${step2}`);
     
-    const libAuthDir = path.join(fullPath, "lib", "auth");
-    await fs.ensureDir(libAuthDir);
+    // Create main auth.ts configuration
+    const authConfigTemplate = createAuthConfigTemplate(includeOAuthProviders, projectState.hasDrizzle);
+    await fs.writeFile(path.join(fullPath, "auth.ts"), authConfigTemplate);
     
-    // Create JWT session handling
-    const sessionTemplate = createJwtSessionTemplate();
-    await fs.writeFile(path.join(libAuthDir, "session.ts"), sessionTemplate);
-    
-    console.error(`[STEP 2/6] ✅ Completed: ${step2}`);
+    console.error(`[STEP 2/7] ✅ Completed: ${step2}`);
 
-    // Step 3: Create password hashing utilities (if enabled)
-    const step3 = includePasswordHashing 
+    // Step 3: Create versioned API route handlers
+    const step3 = "Setting up NextAuth.js versioned API route handlers...";
+    steps.push(step3);
+    console.error(`[STEP 3/7] ${step3}`);
+    
+    // Create versioned NextAuth API route
+    const apiV1AuthDir = path.join(fullPath, "app", "api", "v1", "auth", "[...nextauth]");
+    await fs.ensureDir(apiV1AuthDir);
+    
+    const nextAuthRouteTemplate = createApiRouteTemplate();
+    await fs.writeFile(path.join(apiV1AuthDir, "route.ts"), nextAuthRouteTemplate);
+    
+    // Create additional auth-related API endpoints
+    const apiV1UserDir = path.join(fullPath, "app", "api", "v1", "user");
+    await fs.ensureDir(apiV1UserDir);
+    
+    if (includeUserManagement && projectState.hasDrizzle) {
+      // Create user profile endpoint
+      const userProfileDir = path.join(apiV1UserDir, "profile");
+      await fs.ensureDir(userProfileDir);
+      const userProfileTemplate = createUserProfileApiTemplate();
+      await fs.writeFile(path.join(userProfileDir, "route.ts"), userProfileTemplate);
+      
+      // Create user management endpoints
+      const userManagementTemplate = createUserManagementApiTemplate();
+      await fs.writeFile(path.join(apiV1UserDir, "route.ts"), userManagementTemplate);
+    }
+    
+    console.error(`[STEP 3/7] ✅ Completed: ${step3}`);
+
+    // Step 4: Create password hashing utilities (if enabled)
+    const step4 = includePasswordHashing 
       ? "Creating password hashing utilities with bcrypt..."
       : "Skipping password hashing utilities...";
-    steps.push(step3);
-    console.error(`[STEP 3/6] ${step3}`);
+    steps.push(step4);
+    console.error(`[STEP 4/7] ${step4}`);
+    
+    const libAuthDir = path.join(fullPath, "libs", "auth");
+    await fs.ensureDir(libAuthDir);
     
     if (includePasswordHashing) {
       const passwordTemplate = createPasswordHashingTemplate();
       await fs.writeFile(path.join(libAuthDir, "password.ts"), passwordTemplate);
     }
     
-    console.error(`[STEP 3/6] ✅ Completed: ${step3}`);
+    // Create auth helper utilities
+    const authHelpersTemplate = createAuthHelpersTemplate();
+    await fs.writeFile(path.join(libAuthDir, "helpers.ts"), authHelpersTemplate);
+    
+    console.error(`[STEP 4/7] ✅ Completed: ${step4}`);
 
-    // Step 4: Create authentication middleware and validation
-    const step4 = "Setting up authentication middleware and validation...";
-    steps.push(step4);
-    console.error(`[STEP 4/6] ${step4}`);
+    // Step 5: Create validation schemas
+    const step5 = "Setting up authentication validation schemas...";
+    steps.push(step5);
+    console.error(`[STEP 5/7] ${step5}`);
     
-    // Create auth middleware for server actions
-    const middlewareTemplate = createAuthMiddlewareTemplate();
-    await fs.writeFile(path.join(libAuthDir, "middleware.ts"), middlewareTemplate);
-    
-    // Create validation schemas
     const validationSchemaTemplate = createAuthValidationTemplate();
     const validationsDir = path.join(fullPath, "validations");
     await fs.ensureDir(validationsDir);
     await fs.writeFile(path.join(validationsDir, "auth.ts"), validationSchemaTemplate);
     
-    console.error(`[STEP 4/6] ✅ Completed: ${step4}`);
+    console.error(`[STEP 5/7] ✅ Completed: ${step5}`);
 
-    // Step 5: Create user management system (if enabled and database available)
-    const step5 = (includeUserManagement && projectState.hasDrizzle) 
+    // Step 6: Create user management system (if enabled and database available)
+    const step6 = (includeUserManagement && projectState.hasDrizzle) 
       ? "Creating user management system with database integration..."
       : includeUserManagement 
         ? "Creating basic user management (database integration disabled)..."
         : "Skipping user management system...";
-    steps.push(step5);
-    console.error(`[STEP 5/6] ${step5}`);
+    steps.push(step6);
+    console.error(`[STEP 6/7] ${step6}`);
     
     if (includeUserManagement) {
       if (projectState.hasDrizzle) {
         // Create user model if it doesn't exist
         const userModelTemplate = createUserModelTemplate();
         const modelsDir = path.join(fullPath, "models");
+        await fs.ensureDir(modelsDir);
         const userModelPath = path.join(modelsDir, "user.ts");
         
         if (!await fs.pathExists(userModelPath)) {
@@ -136,7 +168,8 @@ export async function setupAuthenticationJwt(config: AuthenticationJwtConfig): P
         
         // Create user queries
         const userQueriesTemplate = createUserQueriesTemplate();
-        const libDbDir = path.join(fullPath, "lib", "db");
+        const libDbDir = path.join(fullPath, "libs", "db");
+        await fs.ensureDir(libDbDir);
         await fs.writeFile(path.join(libDbDir, "user-queries.ts"), userQueriesTemplate);
       }
       
@@ -145,36 +178,44 @@ export async function setupAuthenticationJwt(config: AuthenticationJwtConfig): P
       const actionsDir = path.join(fullPath, "actions");
       await fs.ensureDir(actionsDir);
       await fs.writeFile(path.join(actionsDir, "auth.ts"), authActionsTemplate);
+      
+      // Create dashboard actions with proper data fetching patterns
+      const dashboardActionsTemplate = createDashboardActionsTemplate();
+      await fs.writeFile(path.join(actionsDir, "dashboard.ts"), dashboardActionsTemplate);
     }
     
-    console.error(`[STEP 5/6] ✅ Completed: ${step5}`);
+    console.error(`[STEP 6/7] ✅ Completed: ${step6}`);
 
-    // Step 6: Create authentication components
-    const step6 = "Creating authentication UI components...";
-    steps.push(step6);
-    console.error(`[STEP 6/6] ${step6}`);
+    // Step 7: Create authentication components
+    const step7 = "Creating authentication UI components...";
+    steps.push(step7);
+    console.error(`[STEP 7/7] ${step7}`);
     
     const authComponentsDir = path.join(fullPath, "components", "auth");
     await fs.ensureDir(authComponentsDir);
     
-    // Create login form
-    const loginFormTemplate = createLoginFormTemplate();
-    await fs.writeFile(path.join(authComponentsDir, "login-form.tsx"), loginFormTemplate);
+    // Create sign-in form
+    const signinFormTemplate = createSignInFormTemplate();
+    await fs.writeFile(path.join(authComponentsDir, "signin-form.tsx"), signinFormTemplate);
     
     // Create signup form
     const signupFormTemplate = createSignupFormTemplate();
     await fs.writeFile(path.join(authComponentsDir, "signup-form.tsx"), signupFormTemplate);
     
+    // Create auth components
+    const authButtonTemplate = createAuthButtonTemplate();
+    await fs.writeFile(path.join(authComponentsDir, "auth-button.tsx"), authButtonTemplate);
+    
     // Create auth components index
-    const authIndexTemplate = `export { LoginForm } from './login-form.js';\nexport { SignupForm } from './signup-form.js';\n`;
+    const authIndexTemplate = `export { SignInForm } from './signin-form.js';\nexport { SignupForm } from './signup-form.js';\nexport { AuthButton } from './auth-button.js';\n`;
     await fs.writeFile(path.join(authComponentsDir, "index.ts"), authIndexTemplate);
     
-    console.error(`[STEP 6/6] ✅ Completed: ${step6}`);
+    console.error(`[STEP 7/7] ✅ Completed: ${step7}`);
 
     const totalTime = ((Date.now() - startTime) / 1000).toFixed(2);
-    console.error(`[SUCCESS] JWT authentication setup completed in ${totalTime}s`);
+    console.error(`[SUCCESS] NextAuth.js authentication setup completed in ${totalTime}s`);
 
-    return `🎉 JWT authentication setup completed successfully!\n\n⏱️ Total time: ${totalTime}s\n\n✅ Completed steps:\n${steps.map((step, i) => `${i + 1}. ${step}`).join('\n')}\n\n🔐 **Authentication Configuration:**\n- **JWT Tokens**: Secure session management with jose library\n- **Password Security**: ${includePasswordHashing ? 'bcrypt password hashing enabled' : 'Basic authentication (no password hashing)'}\n- **User Management**: ${includeUserManagement ? 'Full CRUD operations enabled' : 'Basic authentication only'}\n- **Database Integration**: ${projectState.hasDrizzle ? 'Connected to your Drizzle setup' : 'No database integration'}\n- **Type Safety**: Full TypeScript integration with Zod validation\n\n📁 **Files Created:**\n- \`lib/auth/session.ts\` - JWT session management\n${includePasswordHashing ? '- `lib/auth/password.ts` - bcrypt password hashing\n' : ''}- \`lib/auth/middleware.ts\` - Authentication middleware\n- \`validations/auth.ts\` - Zod validation schemas${includeUserManagement && projectState.hasDrizzle ? '\n- `lib/db/user-queries.ts` - Database user operations' : ''}${includeUserManagement ? '\n- `actions/auth.ts` - Authentication server actions' : ''}\n- \`components/auth/\` - Login and signup forms\n\n🔒 **Security Features:**\n- **JWT Tokens**: Secure, stateless authentication${includePasswordHashing ? '\n- **Password Hashing**: bcrypt with salt for secure password storage' : ''}\n- **Session Management**: Automatic token refresh and validation\n- **Input Validation**: Zod schemas prevent invalid data\n- **Type Safety**: Full TypeScript coverage\n\n💻 **Usage Examples:**\n\n### Server-Side Authentication\n\`\`\`typescript\nimport { getUser } from '@/lib/auth/session';\n\n// Get current user in server components/actions\nconst user = await getUser();\nif (!user) {\n  redirect('/login');\n}\n\`\`\`\n\n### Client-Side Components\n\`\`\`typescript\nimport { LoginForm, SignupForm } from '@/components/auth';\n\n// Use in your pages\n<LoginForm />\n<SignupForm />\n\`\`\`\n\n${includePasswordHashing ? '### Password Operations\n```typescript\nimport { hashPassword, verifyPassword } from \'@/lib/auth/password\';\n\nconst hashedPassword = await hashPassword(password);\nconst isValid = await verifyPassword(password, hashedPassword);\n```\n\n' : ''}🚀 **Integration Status:**${projectState.hasDrizzle ? '\n- ✅ **Database**: Connected to your Drizzle setup' : '\n- 🔧 **Database**: Run `setup_drizzle_orm` for persistent user storage'}${projectState.hasEnvironmentVars ? '\n- ✅ **Environment**: AUTH_SECRET ready for configuration' : '\n- 🔧 **Environment**: Run `setup_environment_vars` to add AUTH_SECRET'}\n- 🔒 **Routes**: Run \`setup_protected_routes\` to add middleware protection\n\n💡 **Next steps:**\n1. **Configure AUTH_SECRET**: ${projectState.hasEnvironmentVars ? 'Update your .env.local with a secure 32+ character secret' : 'Run `setup_environment_vars` first'}\n2. **Protect routes**: Run \`setup_protected_routes\` to add middleware protection\n3. **Create auth pages**: Add /login and /signup pages using the generated components\n4. **Database setup**: ${projectState.hasDrizzle ? 'Run `pnpm db:generate` and `pnpm db:migrate` to create user tables' : 'Run `setup_drizzle_orm` for user persistence'}\n\n⚠️  **Important Notes:**\n- Set a strong AUTH_SECRET (32+ characters) in your environment variables\n- The JWT tokens are stateless - no server-side session storage needed\n- User data is ${projectState.hasDrizzle ? 'persisted in your database' : 'not persisted without database setup'}\n- Password hashing uses bcrypt with automatic salt generation\n\n📚 **Documentation:** Check the generated files for detailed TypeScript examples and API documentation.`;
+    return `🎉 NextAuth.js authentication setup completed successfully!\n\n⏱️ Total time: ${totalTime}s\n\n✅ Completed steps:\n${steps.map((step, i) => `${i + 1}. ${step}`).join('\n')}\n\n🔐 **NextAuth.js Configuration:**\n- **Authentication Provider**: ${includeOAuthProviders ? 'Credentials + OAuth providers' : 'Credentials provider'}\n- **Password Security**: ${includePasswordHashing ? 'bcrypt password hashing enabled' : 'Basic authentication (no password hashing)'}\n- **User Management**: ${includeUserManagement ? 'Full CRUD operations enabled' : 'Basic authentication only'}\n- **Database Integration**: ${projectState.hasDrizzle ? 'Connected to your Drizzle setup' : 'No database integration'}\n- **Type Safety**: Full TypeScript integration with Zod validation\n\n📁 **Files Created:**\n- \`auth.ts\` - NextAuth.js configuration\n- \`app/api/v1/auth/[...nextauth]/route.ts\` - Versioned NextAuth API route handler${includeUserManagement && projectState.hasDrizzle ? '\n- `app/api/v1/user/route.ts` - User management API endpoints\n- `app/api/v1/user/profile/route.ts` - User profile API endpoints' : ''}\n${includePasswordHashing ? '- `libs/auth/password.ts` - bcrypt password hashing\n' : ''}- \`libs/auth/helpers.ts\` - Authentication helper utilities\n- \`validations/auth.ts\` - Zod validation schemas${includeUserManagement && projectState.hasDrizzle ? '\n- `libs/db/user-queries.ts` - Database user operations' : ''}${includeUserManagement ? '\n- `actions/auth.ts` - Authentication server actions\n- `actions/dashboard.ts` - Dashboard data fetching actions' : ''}\n- \`components/auth/\` - Sign-in, signup forms and auth button\n\n🔒 **Security Features:**\n- **NextAuth.js**: Industry-standard authentication library${includePasswordHashing ? '\n- **Password Hashing**: bcrypt with salt for secure password storage' : ''}\n- **Session Management**: Automatic token refresh and CSRF protection\n- **Input Validation**: Zod schemas prevent invalid data\n- **Type Safety**: Full TypeScript coverage\n\n💻 **Usage Examples:**\n\n### Server-Side Authentication\n\`\`\`typescript\nimport { auth } from '@/auth';\n\n// Get current user in server components/actions\nconst session = await auth();\nif (!session?.user) {\n  redirect('/signin');\n}\n\`\`\`\n\n### Server Components with Data Fetching\n\`\`\`typescript\n// app/dashboard/page.tsx\nimport { getUserDashboardData } from '@/actions/dashboard';\n\nasync function DashboardPage() {\n  const data = await getUserDashboardData();\n  \n  return (\n    <div className=\"space-y-6\">\n      <h1>Welcome, {data.user.name}</h1>\n      <div className=\"grid gap-4\">\n        <p>Account created: {Math.floor(data.stats.accountAge)} days ago</p>\n      </div>\n    </div>\n  );\n}\n\nexport default DashboardPage;\n\`\`\`\n\n### Versioned API Endpoints\n\`\`\`typescript\n// GET /api/v1/user - Get current user\nfetch('/api/v1/user')\n\n// GET /api/v1/user/profile - Get user profile\nfetch('/api/v1/user/profile')\n\n// PUT /api/v1/user/profile - Update profile\nfetch('/api/v1/user/profile', {\n  method: 'PUT',\n  body: JSON.stringify({ name: 'New Name' })\n})\n\`\`\`\n\n### Client-Side Components\n\`\`\`typescript\nimport { SignInForm, SignupForm, AuthButton } from '@/components/auth';\n\n// Use in your pages\n<SignInForm />\n<SignupForm />\n<AuthButton />\n\`\`\`\n\n${includePasswordHashing ? '### Password Operations\n```typescript\nimport { hashPassword, verifyPassword } from \'@/libs/auth/password\';\n\nconst hashedPassword = await hashPassword(password);\nconst isValid = await verifyPassword(password, hashedPassword);\n```\n\n' : ''}🚀 **Integration Status:**${projectState.hasDrizzle ? '\n- ✅ **Database**: Connected to your Drizzle setup' : '\n- 🔧 **Database**: Run `setup_drizzle_orm` for persistent user storage'}${projectState.hasEnvironmentVars ? '\n- ✅ **Environment**: AUTH_SECRET ready for configuration' : '\n- 🔧 **Environment**: Run `setup_environment_vars` to add AUTH_SECRET'}\n- 🔒 **Routes**: Run \`setup_protected_routes\` to add middleware protection\n\n💡 **Next steps:**\n1. **Configure AUTH_SECRET**: ${projectState.hasEnvironmentVars ? 'Update your .env with a secure 32+ character secret (run `npx auth secret`)' : 'Run `setup_environment_vars` first'}\n2. **Protect routes**: Run \`setup_protected_routes\` to add middleware protection\n3. **Create auth pages**: Add /signin and /signup pages using the generated components\n4. **Database setup**: ${projectState.hasDrizzle ? 'Run `pnpm db:generate` and `pnpm db:migrate` to create user tables' : 'Run `setup_drizzle_orm` for user persistence'}\n\n⚠️  **Important Notes:**\n- Set a strong AUTH_SECRET using \`npx auth secret\` command\n- NextAuth.js handles CSRF protection and session management automatically\n- User data is ${projectState.hasDrizzle ? 'persisted in your database' : 'not persisted without database setup'}\n- Password hashing uses bcrypt with automatic salt generation\n\n📚 **Documentation:** Check https://authjs.dev for comprehensive NextAuth.js documentation.`;
 
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : String(error);
@@ -185,6 +226,471 @@ export async function setupAuthenticationJwt(config: AuthenticationJwtConfig): P
     
     throw new Error(`❌ Failed at step: "${currentStep}"\n\n🔍 Error Details: ${errorMsg}\n\n📍 Project Path: ${fullPath}\n\n✅ Completed Steps: ${steps.slice(0, -1).map((step, i) => `${i + 1}. ${step}`).join('\n')}\n\n💡 **Troubleshooting:**\n- Ensure you have pnpm installed\n- Check that the project directory is writable\n- Verify Next.js project exists (run create_nextjs_base first)\n- For database integration, ensure Drizzle is set up (run setup_drizzle_orm first)`);
   }
+}
+
+function createAuthConfigTemplate(includeOAuthProviders: boolean, hasDatabase: boolean): string {
+  const oauthProviders = includeOAuthProviders ? `
+  Google({
+    clientId: process.env.GOOGLE_CLIENT_ID!,
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+  }),
+  GitHub({
+    clientId: process.env.GITHUB_ID!,
+    clientSecret: process.env.GITHUB_SECRET!,
+  }),` : '';
+  
+  const databaseConfig = hasDatabase ? `
+  adapter: DrizzleAdapter(db, {
+    usersTable: userTable,
+    accountsTable: accountTable,
+    sessionsTable: sessionTable,
+    verificationTokensTable: verificationTokenTable,
+  }),
+  session: { strategy: "database" },` : `
+  session: { strategy: "jwt" },`;
+  
+  const imports = includeOAuthProviders ? `import Google from "next-auth/providers/google";
+import GitHub from "next-auth/providers/github";` : '';
+  const dbImports = hasDatabase ? `import { DrizzleAdapter } from "@auth/drizzle-adapter";
+import { db } from "@/libs/db";
+import { userTable, accountTable, sessionTable, verificationTokenTable } from "@/models/user";` : '';
+  
+  return `/**
+ * @fileoverview NextAuth.js Configuration
+ * @description Main NextAuth.js configuration with credentials provider and database integration
+ */
+
+import NextAuth from "next-auth";
+import Credentials from "next-auth/providers/credentials";
+${imports}
+${dbImports}
+${hasDatabase ? 'import { getUserByEmail } from "@/libs/db/user-queries";' : ''}
+${hasDatabase ? 'import { verifyPassword } from "@/libs/auth/password";' : ''}
+import { loginSchema } from "@/validations/auth";
+
+export const { handlers, signIn, signOut, auth } = NextAuth({
+  providers: [
+    Credentials({
+      credentials: {
+        email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" },
+      },
+      async authorize(credentials) {
+        const validatedFields = loginSchema.safeParse(credentials);
+        
+        if (!validatedFields.success) {
+          return null;
+        }
+        
+        const { email, password } = validatedFields.data;
+        
+        ${hasDatabase ? `try {
+          const user = await getUserByEmail(email);
+          if (!user || !user.passwordHash) {
+            return null;
+          }
+          
+          const isValidPassword = await verifyPassword(password, user.passwordHash);
+          if (!isValidPassword) {
+            return null;
+          }
+          
+          return {
+            id: user.id.toString(),
+            email: user.email,
+            name: user.name,
+          };
+        } catch (error) {
+          console.error("Auth error:", error);
+          return null;
+        }` : `// Demo authentication without database
+        if (email === "demo@example.com" && password === "demo123") {
+          return {
+            id: "1",
+            email: email,
+            name: "Demo User",
+          };
+        }
+        return null;`}
+      },
+    }),${oauthProviders}
+  ],${databaseConfig}
+  basePath: "/api/v1/auth",
+  pages: {
+    signIn: "/signin",
+    signUp: "/signup",
+  },
+  callbacks: {
+    authorized({ auth, request: { nextUrl } }) {
+      const isLoggedIn = !!auth?.user;
+      const isOnDashboard = nextUrl.pathname.startsWith('/dashboard');
+      
+      if (isOnDashboard) {
+        if (isLoggedIn) return true;
+        return false; // Redirect unauthenticated users to login page
+      } else if (isLoggedIn) {
+        return Response.redirect(new URL('/dashboard', nextUrl));
+      }
+      return true;
+    },
+  },
+});
+`;
+}
+
+function createApiRouteTemplate(): string {
+  return `/**
+ * @fileoverview NextAuth.js Versioned API Route Handler
+ * @description API route handler for NextAuth.js authentication at /api/v1/auth
+ */
+
+import { handlers } from "@/auth";
+
+export const { GET, POST } = handlers;
+`;
+}
+
+function createAuthHelpersTemplate(): string {
+  return `/**
+ * @fileoverview Authentication Helper Utilities
+ * @description Helper functions for NextAuth.js authentication
+ */
+
+import { auth } from "@/auth";
+import { redirect } from "next/navigation";
+
+/**
+ * Get current user session
+ */
+export async function getCurrentUser() {
+  const session = await auth();
+  return session?.user || null;
+}
+
+/**
+ * Require user to be authenticated (for server components/actions)
+ */
+export async function requireAuth() {
+  const session = await auth();
+  if (!session?.user) {
+    redirect('/signin');
+  }
+  return session.user;
+}
+
+/**
+ * Check if user is authenticated
+ */
+export async function isAuthenticated(): Promise<boolean> {
+  const session = await auth();
+  return !!session?.user;
+}
+`;
+}
+
+function createSignInFormTemplate(): string {
+  return `/**
+ * @fileoverview Sign In Form Component
+ * @description Reusable sign-in form with NextAuth.js integration
+ */
+
+'use client';
+
+import { useFormState } from 'react-dom';
+import { signInAction } from '@/actions/auth.js';
+
+export function SignInForm() {
+  const [state, formAction] = useFormState(signInAction, {});
+
+  return (
+    <div className="mx-auto max-w-sm space-y-6">
+      <div className="space-y-2 text-center">
+        <h1 className="text-3xl font-bold">Sign In</h1>
+        <p className="text-muted-foreground">
+          Enter your email and password to sign in to your account
+        </p>
+      </div>
+      
+      <form action={formAction} className="space-y-4">
+        <div className="space-y-2">
+          <label htmlFor="email" className="text-sm font-medium">
+            Email
+          </label>
+          <input
+            id="email"
+            name="email"
+            type="email"
+            placeholder="Enter your email"
+            required
+            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+          />
+        </div>
+        
+        <div className="space-y-2">
+          <label htmlFor="password" className="text-sm font-medium">
+            Password
+          </label>
+          <input
+            id="password"
+            name="password"
+            type="password"
+            placeholder="Enter your password"
+            required
+            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+          />
+        </div>
+
+        {state.error && (
+          <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md">
+            {state.error}
+          </div>
+        )}
+
+        <button
+          type="submit"
+          className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2 w-full"
+        >
+          Sign In
+        </button>
+      </form>
+      
+      <div className="text-center text-sm">
+        Don't have an account?{' '}
+        <a href="/signup" className="underline">
+          Sign up
+        </a>
+      </div>
+    </div>
+  );
+}
+`;
+}
+
+function createAuthButtonTemplate(): string {
+  return `/**
+ * @fileoverview Auth Button Component
+ * @description Sign in/out button with session management
+ */
+
+import { auth } from '@/auth';
+import { signOutAction } from '@/actions/auth.js';
+
+export async function AuthButton() {
+  const session = await auth();
+  
+  if (session?.user) {
+    return (
+      <div className="flex items-center gap-4">
+        <span className="text-sm text-muted-foreground">
+          {session.user.email}
+        </span>
+        <form action={signOutAction}>
+          <button
+            type="submit"
+            className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 px-3"
+          >
+            Sign Out
+          </button>
+        </form>
+      </div>
+    );
+  }
+  
+  return (
+    <a
+      href="/signin"
+      className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-3"
+    >
+      Sign In
+    </a>
+  );
+}
+`;
+}
+
+function createUserProfileApiTemplate(): string {
+  return `/**
+ * @fileoverview User Profile API Route
+ * @description API endpoints for user profile management at /api/v1/user/profile
+ */
+
+import { NextRequest } from "next/server";
+import { auth } from "@/auth";
+import { getUserById, updateUser } from "@/libs/db/user-queries";
+import { updateProfileSchema } from "@/validations/auth";
+
+// GET /api/v1/user/profile - Get current user profile
+export async function GET() {
+  try {
+    const session = await auth();
+    if (!session?.user) {
+      return Response.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const user = await getUserById(parseInt(session.user.id));
+    if (!user) {
+      return Response.json({ error: "User not found" }, { status: 404 });
+    }
+
+    // Return user without password hash
+    const { passwordHash, ...publicUser } = user;
+    return Response.json({ user: publicUser });
+  } catch (error) {
+    return Response.json({ error: "Internal server error" }, { status: 500 });
+  }
+}
+
+// PUT /api/v1/user/profile - Update user profile
+export async function PUT(request: NextRequest) {
+  try {
+    const session = await auth();
+    if (!session?.user) {
+      return Response.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const body = await request.json();
+    const validatedData = updateProfileSchema.parse(body);
+
+    const updatedUser = await updateUser(parseInt(session.user.id), validatedData);
+    if (!updatedUser) {
+      return Response.json({ error: "Failed to update user" }, { status: 500 });
+    }
+
+    return Response.json({ user: updatedUser });
+  } catch (error) {
+    if (error.name === 'ZodError') {
+      return Response.json({ error: "Invalid input data" }, { status: 400 });
+    }
+    return Response.json({ error: "Internal server error" }, { status: 500 });
+  }
+}
+`;
+}
+
+function createUserManagementApiTemplate(): string {
+  return `/**
+ * @fileoverview User Management API Route
+ * @description API endpoints for user management at /api/v1/user
+ */
+
+import { NextRequest } from "next/server";
+import { auth } from "@/auth";
+import { getUserById } from "@/libs/db/user-queries";
+
+// GET /api/v1/user - Get current user data
+export async function GET() {
+  try {
+    const session = await auth();
+    if (!session?.user) {
+      return Response.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const user = await getUserById(parseInt(session.user.id));
+    if (!user) {
+      return Response.json({ error: "User not found" }, { status: 404 });
+    }
+
+    // Return user without password hash
+    const { passwordHash, ...publicUser } = user;
+    return Response.json({ 
+      user: publicUser,
+      version: "v1"
+    });
+  } catch (error) {
+    return Response.json({ 
+      error: "Internal server error",
+      version: "v1"
+    }, { status: 500 });
+  }
+}
+
+// DELETE /api/v1/user - Delete current user account
+export async function DELETE() {
+  try {
+    const session = await auth();
+    if (!session?.user) {
+      return Response.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Add user deletion logic here
+    // const deleted = await deleteUser(parseInt(session.user.id));
+    
+    return Response.json({ 
+      message: "Account deletion requested",
+      version: "v1"
+    });
+  } catch (error) {
+    return Response.json({ 
+      error: "Internal server error",
+      version: "v1"
+    }, { status: 500 });
+  }
+}
+`;
+}
+
+function createDashboardActionsTemplate(): string {
+  return `/**
+ * @fileoverview Dashboard Server Actions
+ * @description Server actions for dashboard data fetching using proper separation of concerns
+ */
+
+"use server";
+
+import { auth } from "@/auth";
+import { getUserById } from "@/libs/db/user-queries";
+import { redirect } from "next/navigation";
+
+export async function getUserDashboardData() {
+  const session = await auth();
+  if (!session?.user) {
+    redirect('/signin');
+  }
+  
+  try {
+    const user = await getUserById(parseInt(session.user.id));
+    if (!user) {
+      throw new Error('User not found');
+    }
+    
+    // Return dashboard data without exposing sensitive information
+    const { passwordHash, ...publicUser } = user;
+    
+    return {
+      user: publicUser,
+      stats: {
+        totalSessions: 1,
+        lastLogin: user.updatedAt,
+        accountAge: Math.floor((Date.now() - new Date(user.createdAt).getTime()) / (1000 * 60 * 60 * 24))
+      }
+    };
+  } catch (error) {
+    throw new Error('Failed to fetch dashboard data');
+  }
+}
+
+export async function updateUserProfile(formData: FormData) {
+  const session = await auth();
+  if (!session?.user) {
+    redirect('/signin');
+  }
+  
+  const name = formData.get('name') as string;
+  const email = formData.get('email') as string;
+  
+  // Add validation logic here
+  if (!name || !email) {
+    throw new Error('Name and email are required');
+  }
+  
+  try {
+    const updatedUser = await updateUser(parseInt(session.user.id), { name, email });
+    return updatedUser;
+  } catch (error) {
+    throw new Error('Failed to update profile');
+  }
+}
+`;
 }
 
 function createJwtSessionTemplate(): string {
@@ -593,7 +1099,7 @@ export type PublicUser = typeof publicUserSchema._type;
 function createUserQueriesTemplate(): string {
   return `/**
  * @fileoverview User Database Queries
- * @description Database operations for user management
+ * @description Database operations for NextAuth.js user management
  */
 
 import { eq } from 'drizzle-orm';
@@ -702,13 +1208,13 @@ export async function deleteUser(id: number): Promise<void> {
 }
 
 /**
- * Verify user email
+ * Update email verification status
  */
-export async function verifyUserEmail(id: number): Promise<void> {
+export async function updateEmailVerified(id: number, emailVerified: Date | null = new Date()): Promise<void> {
   await db
     .update(userTable)
     .set({
-      emailVerified: true,
+      emailVerified,
       updatedAt: new Date(),
     })
     .where(eq(userTable.id, id));
@@ -717,17 +1223,17 @@ export async function verifyUserEmail(id: number): Promise<void> {
 }
 
 function createAuthActionsTemplate(hasDatabase: boolean, hasPasswordHashing: boolean): string {
-  const passwordImport = hasPasswordHashing ? "import { hashPassword, verifyPassword } from '@/lib/auth/password.js';" : "";
-  const userQueriesImport = hasDatabase ? "import { createUser, getUserByEmail } from '@/lib/db/user-queries.js';" : "";
+  const passwordImport = hasPasswordHashing ? "import { hashPassword, verifyPassword } from '@/libs/auth/password';" : "";
+  const userQueriesImport = hasDatabase ? "import { createUser, getUserByEmail } from '@/libs/db/user-queries';" : "";
   
   return `/**
  * @fileoverview Authentication Server Actions
  * @description Server actions for login, signup, and user management
  */
 
-import { createSession, setSessionCookie, clearSession } from '@/lib/auth/session.js';
-import { validatedAction, validatedActionWithUser } from '@/lib/auth/middleware.js';
-import { loginSchema, signupSchema } from '@/validations/auth.js';
+import { createSession, setSessionCookie, clearSession } from '@/libs/auth/session';
+import { validatedAction, validatedActionWithUser } from '@/libs/auth/middleware';
+import { loginSchema, signupSchema } from '@/validations/auth';
 import { redirect } from 'next/navigation';
 ${passwordImport}
 ${userQueriesImport}

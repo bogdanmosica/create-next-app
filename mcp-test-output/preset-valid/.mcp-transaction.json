@@ -1,0 +1,21 @@
+{
+  "id": "tx_1757143714536_rzfdg9u5v",
+  "projectPath": "D:\\Projects\\Model Context Protocols\\create-next-app\\mcp-test-output\\preset-valid",
+  "startTime": 1757143714536,
+  "status": "rolled_back",
+  "steps": [
+    {
+      "id": "nextjs-foundation",
+      "name": "Next.js Foundation with shadcn/ui",
+      "type": "tool",
+      "status": "failed",
+      "created": [],
+      "modified": [],
+      "commands": [],
+      "startTime": 1757143715279,
+      "endTime": 1757143717568,
+      "error": "❌ Failed at step: \"Initializing Next.js app with pnpm...\"\n\n🔍 Error Details: Command \"npx create-next-app@latest preset-valid --typescript --tailwind --app --use-pnpm --no-eslint --yes\" failed: Command failed: npx create-next-app@latest preset-valid --typescript --tailwind --app --use-pnpm --no-eslint --yes\n\n\n📍 Project Path: D:\\Projects\\Model Context Protocols\\create-next-app\\mcp-test-output\\preset-valid\n\n✅ Completed Steps: "
+    }
+  ],
+  "backupPath": "D:\\Projects\\Model Context Protocols\\create-next-app\\mcp-test-output\\preset-valid\\.mcp-backup"
+}

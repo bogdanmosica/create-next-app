@@ -50,9 +50,9 @@ export async function setupFormHandling(config: FormHandlingConfig): Promise<str
     console.error(`[DEBUG] Project state:`, projectState);
 
     // Check for existing form setup
-    const formHooksPath = path.join(projectPath, "lib", "forms", "hooks.ts");
+    const formHooksPath = path.join(projectPath, "libs", "forms", "hooks.ts");
     if (await fs.pathExists(formHooksPath)) {
-      throw new Error("Form handling appears to already be set up (lib/forms/hooks.ts exists).");
+      throw new Error("Form handling appears to already be set up (libs/forms/hooks.ts exists).");
     }
 
     // Step 1: Install dependencies
@@ -404,9 +404,20 @@ export function useFormPersistence<T extends FieldValues>(
 import { FieldError, FieldErrors } from 'react-hook-form';
 
 // Extract error message from React Hook Form error
-export function getErrorMessage(error: FieldError | undefined): string | undefined {
+export function getErrorMessage(error: any): string | undefined {
   if (!error) return undefined;
-  return error.message || 'Invalid value';
+  
+  // Handle direct FieldError objects
+  if (typeof error === 'object' && error.message) {
+    return error.message;
+  }
+  
+  // Handle nested error structures from React Hook Form
+  if (typeof error === 'object' && error.type) {
+    return error.message || 'Invalid value';
+  }
+  
+  return undefined;
 }
 
 // Get nested field error message
@@ -438,7 +449,7 @@ export function getFirstErrorMessage<T>(errors: FieldErrors<T>): string | undefi
   const firstErrorKey = Object.keys(errors)[0];
   if (!firstErrorKey) return undefined;
   
-  const firstError = errors[firstErrorKey as keyof T] as FieldError;
+  const firstError = errors[firstErrorKey as keyof T];
   return getErrorMessage(firstError);
 }
 
@@ -724,7 +735,7 @@ export type FieldValidationRule = {
 export type FieldValidationRules = Record<string, FieldValidationRule>;
 `;
 
-  const libFormsDir = path.join(projectPath, "lib", "forms");
+  const libFormsDir = path.join(projectPath, "libs", "forms");
   await fs.ensureDir(libFormsDir);
   
   await fs.writeFile(path.join(libFormsDir, "hooks.ts"), formHooksContent);
@@ -755,7 +766,7 @@ async function createFormComponents(projectPath: string, options: { includeZodVa
 'use client';
 
 import React from 'react';
-import { cn } from '@/lib/utils';
+import { cn } from '@/libs/utils';
 import { Label } from '@/components/ui/label';
 
 interface FormFieldProps {
@@ -812,8 +823,8 @@ import React from 'react';
 import { UseFormReturn, FieldPath, FieldValues } from 'react-hook-form';
 import { Input } from '@/components/ui/input';
 import { FormField } from './form-field';
-import { getErrorMessage } from '@/lib/forms/utils';
-import { cn } from '@/lib/utils';
+import { getErrorMessage } from '@/libs/forms/utils';
+import { cn } from '@/libs/utils';
 
 interface FormInputProps<TFieldValues extends FieldValues = FieldValues> {
   form: UseFormReturn<TFieldValues>;
@@ -880,8 +891,8 @@ import React from 'react';
 import { UseFormReturn, FieldPath, FieldValues } from 'react-hook-form';
 import { Textarea } from '@/components/ui/textarea';
 import { FormField } from './form-field';
-import { getErrorMessage } from '@/lib/forms/utils';
-import { cn } from '@/lib/utils';
+import { getErrorMessage } from '@/libs/forms/utils';
+import { cn } from '@/libs/utils';
 
 interface FormTextareaProps<TFieldValues extends FieldValues = FieldValues> {
   form: UseFormReturn<TFieldValues>;
@@ -948,7 +959,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { FormField } from './form-field';
-import { getErrorMessage } from '@/lib/forms/utils';
+import { getErrorMessage } from '@/libs/forms/utils';
 
 interface FormSelectProps<TFieldValues extends FieldValues = FieldValues> {
   form: UseFormReturn<TFieldValues>;
@@ -1020,8 +1031,8 @@ import React from 'react';
 import { UseFormReturn, FieldPath, FieldValues } from 'react-hook-form';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
-import { getErrorMessage } from '@/lib/forms/utils';
-import { cn } from '@/lib/utils';
+import { getErrorMessage } from '@/libs/forms/utils';
+import { cn } from '@/libs/utils';
 
 interface FormCheckboxProps<TFieldValues extends FieldValues = FieldValues> {
   form: UseFormReturn<TFieldValues>;
@@ -1084,7 +1095,7 @@ import React from 'react';
 import { UseFormReturn, FieldValues } from 'react-hook-form';
 import { Button, ButtonProps } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn } from '@/libs/utils';
 
 interface FormSubmitButtonProps<TFieldValues extends FieldValues = FieldValues> 
   extends Omit<ButtonProps, 'type'> {
@@ -1550,7 +1561,7 @@ export function useInvalidateQueries() {
 }
 `;
 
-  const libFormsDir = path.join(projectPath, "lib", "forms");
+  const libFormsDir = path.join(projectPath, "libs", "forms");
   await fs.writeFile(path.join(libFormsDir, "query-provider.tsx"), queryProviderContent);
   await fs.writeFile(path.join(libFormsDir, "query-hooks.ts"), queryHooksContent);
 
@@ -1647,7 +1658,7 @@ const multiStepForm = useZodForm(multiStepSchema);` : `// Basic validation patte
 
 📂 Generated File Structure:
 \`\`\`
-lib/forms/
+libs/forms/
 ├── hooks.ts              # Custom form hooks and utilities
 ├── utils.ts              # Helper functions for form handling
 ├── types.ts              # TypeScript types for form components
@@ -1720,7 +1731,7 @@ const { isLoading, setLoadingState, setErrorState } = useFormState();
 Add the QueryProvider to your root layout:
 
 \`\`\`tsx
-import { QueryProvider } from '@/lib/forms';
+import { QueryProvider } from '@/libs/forms';
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

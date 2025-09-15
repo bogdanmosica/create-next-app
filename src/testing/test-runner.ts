@@ -283,7 +283,7 @@ export class MCPTestRunner {
           "postcss.config.mjs",
           "components.json",
           "components/ui/button.tsx",
-          "lib/utils.ts"
+          "libs/utils.ts"
         ],
         expectedPackages: ["next", "@radix-ui/react-slot", "tailwindcss"],
         validationChecks: [
@@ -350,8 +350,8 @@ export class MCPTestRunner {
           { name: "setup_protected_routes", config: { protectionLevel: "advanced" } }
         ],
         expectedFiles: [
-          "lib/auth/session.ts",
-          "lib/auth/password.ts",
+          "libs/auth/session.ts",
+          "libs/auth/password.ts",
           "actions/auth.ts",
           "components/auth/login-form.tsx",
           "middleware.ts",
@@ -359,7 +359,7 @@ export class MCPTestRunner {
         ],
         expectedPackages: ["jose", "bcryptjs", "zod"],
         validationChecks: [
-          { type: 'file-exists', description: 'Auth session exists', check: 'lib/auth/session.ts' },
+          { type: 'file-exists', description: 'Auth session exists', check: 'libs/auth/session.ts' },
           { type: 'file-exists', description: 'Middleware exists', check: 'middleware.ts' },
           { type: 'package-installed', description: 'JWT library installed', check: 'jose' }
         ]
@@ -376,16 +376,16 @@ export class MCPTestRunner {
           { name: "setup_stripe_webhooks", config: { includeCustomerPortal: true } }
         ],
         expectedFiles: [
-          "lib/payments/stripe.ts",
-          "lib/payments/utils.ts",
+          "libs/payments/stripe.ts",
+          "libs/payments/utils.ts",
           "actions/payments.ts",
           "components/payments/payment-button.tsx",
           "app/api/webhooks/stripe/route.ts",
-          "lib/payments/webhook-handlers.ts"
+          "libs/payments/webhook-handlers.ts"
         ],
         expectedPackages: ["stripe", "@stripe/stripe-js"],
         validationChecks: [
-          { type: 'file-exists', description: 'Stripe client exists', check: 'lib/payments/stripe.ts' },
+          { type: 'file-exists', description: 'Stripe client exists', check: 'libs/payments/stripe.ts' },
           { type: 'file-exists', description: 'Webhook endpoint exists', check: 'app/api/webhooks/stripe/route.ts' }
         ]
       },
@@ -402,7 +402,7 @@ export class MCPTestRunner {
         ],
         expectedFiles: [
           "models/team.ts",
-          "lib/db/team-queries.ts",
+          "libs/db/team-queries.ts",
           "validations/team.ts",
           "actions/team.ts",
           "components/teams/team-form.tsx",
@@ -424,16 +424,16 @@ export class MCPTestRunner {
           { name: "setup_form_handling", config: { includeZodValidation: true, includeReactQuery: true } }
         ],
         expectedFiles: [
-          "lib/forms/hooks.ts",
-          "lib/forms/utils.ts",
-          "lib/forms/query-provider.tsx",
+          "libs/forms/hooks.ts",
+          "libs/forms/utils.ts",
+          "libs/forms/query-provider.tsx",
           "components/forms/form-input.tsx",
           "components/forms/form-field.tsx",
           "validations/forms/schemas.ts"
         ],
         expectedPackages: ["react-hook-form", "@hookform/resolvers", "zod", "@tanstack/react-query"],
         validationChecks: [
-          { type: 'file-exists', description: 'Form hooks exist', check: 'lib/forms/hooks.ts' },
+          { type: 'file-exists', description: 'Form hooks exist', check: 'libs/forms/hooks.ts' },
           { type: 'file-exists', description: 'Form components exist', check: 'components/forms/form-input.tsx' },
           { type: 'package-installed', description: 'React Hook Form installed', check: 'react-hook-form' }
         ]
@@ -450,8 +450,8 @@ export class MCPTestRunner {
         expectedFiles: [
           "vitest.config.ts",
           "playwright.config.ts",
-          "src/test-setup.ts",
-          "src/mocks/handlers.ts",
+          "tests/setup.ts",
+          "tests/mocks/handlers.ts",
           "__tests__/test-utils.tsx",
           "__tests__/components/button.test.tsx",
           "e2e/homepage.spec.ts"
@@ -487,10 +487,10 @@ export class MCPTestRunner {
           "biome.json",
           "drizzle.config.ts",
           "middleware.ts",
-          "lib/auth/session.ts",
-          "lib/payments/stripe.ts",
+          "libs/auth/session.ts",
+          "libs/payments/stripe.ts",
           "models/team.ts",
-          "lib/forms/hooks.ts"
+          "libs/forms/hooks.ts"
         ],
         expectedPackages: [
           "next", "@biomejs/biome", "drizzle-orm", "jose", "bcryptjs",
@@ -504,9 +504,9 @@ export class MCPTestRunner {
             check: async (projectPath: string) => {
               // Custom validation for complete project structure
               const criticalFiles = [
-                'lib/auth/session.ts',
+                'libs/auth/session.ts',
                 'models/team.ts',
-                'lib/payments/stripe.ts',
+                'libs/payments/stripe.ts',
                 'components/forms/form-input.tsx'
               ];
               

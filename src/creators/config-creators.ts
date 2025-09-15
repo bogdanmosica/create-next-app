@@ -45,8 +45,8 @@ export async function updatePackageJsonScripts(projectPath: string): Promise<voi
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
     "components:format:fix": "biome check --write components",
-    "db:setup": "npx tsx lib/db/setup.ts",
-    "db:seed": "npx tsx lib/db/seed.ts",
+    "db:setup": "npx tsx libs/db/setup.ts",
+    "db:seed": "npx tsx libs/db/seed.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate"
   };
@@ -55,7 +55,7 @@ export async function updatePackageJsonScripts(projectPath: string): Promise<voi
 }
 
 export async function createDrizzleSchema(projectPath: string): Promise<void> {
-  await fs.writeFile(path.join(projectPath, "lib", "db", "schema.ts"), drizzleSchemaTemplate);
+  await fs.writeFile(path.join(projectPath, "libs", "db", "schema.ts"), drizzleSchemaTemplate);
 }
 
 export async function createDrizzleConfig(projectPath: string): Promise<void> {

@@ -42,7 +42,7 @@ project/
 ├── locales/
 │   ├── en.json                        # English translations (complete)
 │   └── ro.json                        # Romanian translations (complete)
-├── lib/
+├── libs/
 │   └── navigation.ts                   # Internationalized navigation utilities
 ├── components/
 │   ├── i18n/
@@ -248,7 +248,7 @@ export const config = {
 'use client';
 
 import { useLocale } from 'next-intl';
-import { useRouter, usePathname } from '@/lib/navigation';
+import { useRouter, usePathname } from '@/libs/navigation';
 import { locales } from '@/i18n';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
@@ -292,7 +292,7 @@ import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Link } from '@/lib/navigation';
+import { Link } from '@/libs/navigation';
 
 export function LoginForm({ onSubmit }: LoginFormProps) {
   const t = useTranslations('auth.login');
@@ -480,7 +480,7 @@ import { LanguageSwitcher } from '@/components/i18n';
 <LanguageSwitcher />
 
 // Internationalized navigation
-import { Link } from '@/lib/navigation';
+import { Link } from '@/libs/navigation';
 <Link href="/about">About Us</Link>  // Automatically localized
 
 💡 Next steps:

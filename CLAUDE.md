@@ -1,24 +1,61 @@
 # Next.js SaaS Starter MCP
 
 ## Overview
-This Model Context Protocol (MCP) server automatically creates production-ready Next.js SaaS applications with complete authentication, payments, and team management systems.
+This is a **Model Context Protocol (MCP) server** - a code generation tool that automatically creates production-ready Next.js SaaS applications. This repository contains the MCP server code, templates, and utilities for generating complete SaaS applications.
+
+## Important Distinction
+- **This Repository**: Contains the MCP server (TypeScript + ES modules) that generates Next.js applications
+- **Generated Applications**: The actual Next.js SaaS applications created by this MCP server
+
+### MCP Server (This Repository)
+- Language: TypeScript with ES modules (`"type": "module"`)
+- Purpose: Code generation and template processing
+- Structure: MCP tools, templates, creators, and utilities
+- **Critical Requirement**: `.js` extensions in imports for ES module compatibility
+- **Import Style**: `import { foo } from "./bar.js"` (NOT `"./bar"`)
+
+### Generated Next.js Applications
+- Language: TypeScript with modern Next.js setup
+- Purpose: Production-ready SaaS applications
+- Structure: Standard Next.js app with enhanced features
+- **Import Style**: `import { foo } from "./bar"` (standard Next.js TypeScript)
+- Requirements: Standard Next.js TypeScript configuration
 
 ## Architecture Overview
 
-### Source Structure
-- `src/creators/` - Functions that create files/configs during app setup
+### MCP Server Structure (This Repository)
+- `src/creators/` - Functions that create files/configs during app generation
 - `src/runners/` - Command execution utilities for running npm/system commands
-- `src/templates/` - All file templates and content for generated apps
-- `dist/` - Compiled TypeScript output for distribution
+- `src/templates/` - All file templates and content for generated Next.js apps
+- `src/tools/` - MCP tool implementations for different SaaS features
+- `src/utils/` - MCP server utilities (template loading, validation, etc.)
+- `dist/` - Compiled TypeScript output for MCP server distribution
 
-### Key Files
-- `src/index.ts` - Main MCP server entry point with 18-step creation process
-- `src/creators/saas-lib-creators.ts` - SaaS-specific file creation (auth, payments, db)
-- `src/templates/saas-lib-templates.ts` - Complete SaaS file templates
-- `src/creators/config-creators.ts` - Configuration files (Biome, VSCode, Drizzle)
-- `src/creators/folder-creators.ts` - Project folder structure creation
+### Key MCP Server Files
+- `src/index.ts` - Main MCP server entry point with tool registration
+- `src/core/server.ts` - MCP server implementation and orchestration
+- `src/creators/saas-lib-creators.ts` - SaaS-specific file generation functions
+- `src/templates/saas-lib-templates.ts` - Templates for generated SaaS applications
+- `src/utils/template-loader.ts` - Template loading and processing utilities
 
-## What This MCP Creates
+**Critical Note**: This MCP server uses ES modules (`"type": "module"`) and **requires `.js` extensions in ALL imports** for proper module resolution. This is different from the Next.js applications it generates, which use standard TypeScript imports without extensions.
+
+### Import Examples:
+```typescript
+// ✅ CORRECT - MCP Server imports (this repo)
+import { loadTemplate } from "../utils/template-loader.js";
+import { middlewareTemplate } from "../templates/middleware-template.js";
+
+// ❌ INCORRECT - Will cause "Cannot find module" errors
+import { loadTemplate } from "../utils/template-loader";
+import { middlewareTemplate } from "../templates/middleware-template";
+
+// ✅ CORRECT - Generated Next.js app imports (different style)
+import { Button } from "@/components/ui/button";
+import { db } from "@/libs/db";
+```
+
+## What This MCP Server Generates
 
 ### Complete SaaS Application Features
 - ✅ **Authentication System**: JWT + bcrypt password hashing
@@ -58,7 +95,7 @@ your-app/
 │   ├── es.json            # Spanish (complete)
 │   ├── fr.json            # French (complete)
 │   └── de.json, ja.json, zh.json  # Basic translations
-├── lib/                   # Legacy structure (maintained)
+├── libs/                   # Legacy structure (maintained)
 │   ├── auth/              # JWT session + password handling
 │   ├── db/                # Drizzle queries, migrations
 │   └── payments/          # Stripe integration

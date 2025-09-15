@@ -35,7 +35,7 @@ interface AuthenticationJwtConfig {
 ### Generated Project Structure
 ```
 project/
-├── lib/
+├── libs/
 │   └── auth/
 │       ├── session.ts          # JWT session management
 │       ├── password.ts         # bcrypt password hashing (optional)
@@ -44,7 +44,7 @@ project/
 │   └── auth.ts                 # Zod validation schemas
 ├── models/
 │   └── user.ts                 # User database model (if database enabled)
-├── lib/
+├── libs/
 │   └── db/
 │       └── user-queries.ts     # Database user operations (if database enabled)
 ├── actions/
@@ -97,8 +97,8 @@ project/
 
 ### JWT Session Management
 ```typescript
-// lib/auth/session.ts
-import { createSession, verifySession, getUser } from '@/lib/auth/session';
+// libs/auth/session.ts
+import { createSession, verifySession, getUser } from '@/libs/auth/session';
 
 // Create a session
 const token = await createSession({
@@ -116,8 +116,8 @@ const user = await requireAuth(); // Redirects if not authenticated
 
 ### Password Security (bcrypt)
 ```typescript
-// lib/auth/password.ts
-import { hashPassword, verifyPassword } from '@/lib/auth/password';
+// libs/auth/password.ts
+import { hashPassword, verifyPassword } from '@/libs/auth/password';
 
 // Hash password for storage
 const hashedPassword = await hashPassword(plainPassword);
@@ -128,8 +128,8 @@ const isValid = await verifyPassword(plainPassword, hashedPassword);
 
 ### Authentication Middleware
 ```typescript
-// lib/auth/middleware.ts
-import { validatedAction, validatedActionWithUser } from '@/lib/auth/middleware';
+// libs/auth/middleware.ts
+import { validatedAction, validatedActionWithUser } from '@/libs/auth/middleware';
 
 // Validate form data
 export const myAction = validatedAction(schema, async (data, formData) => {
@@ -144,8 +144,8 @@ export const protectedAction = validatedActionWithUser(schema, async (data, form
 
 ### Database Integration (if enabled)
 ```typescript
-// lib/db/user-queries.ts
-import { createUser, getUserByEmail } from '@/lib/db/user-queries';
+// libs/db/user-queries.ts
+import { createUser, getUserByEmail } from '@/libs/db/user-queries';
 
 // Create new user
 const user = await createUser({

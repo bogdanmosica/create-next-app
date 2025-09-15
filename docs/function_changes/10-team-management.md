@@ -34,7 +34,7 @@ project/
 ├── models/
 │   ├── team.ts                         # Team database schemas and relations
 │   └── schema.ts                       # Updated with team exports
-├── lib/
+├── libs/
 │   └── db/
 │       └── team-queries.ts             # Team database operations
 ├── validations/
@@ -117,7 +117,7 @@ export const teamMembers = pgTable('team_members', {
 
 ### Team Operations
 ```typescript
-// lib/db/team-queries.ts
+// libs/db/team-queries.ts
 export async function createTeam(data: NewTeam): Promise<Team> {
   const [team] = await db.insert(teams).values(data).returning();
   return team;

@@ -28,7 +28,7 @@ interface DrizzleOrmConfig {
 ### Steps Performed (6 Steps)
 1. **Install Dependencies** - Provider-specific database packages
 2. **Create Config** - `drizzle.config.ts` configuration file
-3. **Setup Connection** - `lib/db/index.ts` with typed connection
+3. **Setup Connection** - `libs/db/index.ts` with typed connection
 4. **Create Schema** - Example user model or basic schema template
 5. **Migration System** - Migration utilities and directory structure
 6. **Update Scripts** - Database management scripts in package.json
@@ -37,7 +37,7 @@ interface DrizzleOrmConfig {
 ```
 project/
 ├── drizzle.config.ts           # Drizzle configuration
-├── lib/
+├── libs/
 │   └── db/
 │       ├── index.ts            # Database connection
 │       ├── migrate.ts          # Migration runner
@@ -53,7 +53,7 @@ project/
 {
   "scripts": {
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "tsx lib/db/migrate.ts", 
+    "db:migrate": "tsx libs/db/migrate.ts", 
     "db:studio": "drizzle-kit studio",
     "db:push": "drizzle-kit push"
   }
@@ -109,7 +109,7 @@ project/
 
 ### Database Connection (PostgreSQL)
 ```typescript
-// lib/db/index.ts
+// libs/db/index.ts
 import { drizzle } from 'drizzle-orm/neon-http';
 import { neon } from '@neondatabase/serverless';
 import * as schema from '../models/index.js';
@@ -138,12 +138,12 @@ export const selectUserSchema = createSelectSchema(userTable);
 
 ### Migration Utilities
 ```typescript
-// lib/db/migrate.ts
+// libs/db/migrate.ts
 import { migrate } from 'drizzle-orm/neon-http/migrator';
 import { db } from './index.js';
 
 async function runMigrations() {
-  await migrate(db, { migrationsFolder: './lib/db/migrations' });
+  await migrate(db, { migrationsFolder: './libs/db/migrations' });
 }
 ```
 

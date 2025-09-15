@@ -111,9 +111,9 @@ graph TD
     // ... all other tools
   ],
   expectedFiles: [
-    "lib/auth/session.ts",
+    "libs/auth/session.ts",
     "models/team.ts", 
-    "lib/payments/stripe-client.ts",
+    "libs/payments/stripe-client.ts",
     // ... all expected files
   ],
   validationChecks: [
@@ -189,7 +189,7 @@ results.forEach(result => {
 🔬 Running test: Authentication System
 ❌ Authentication System - FAILED (15.67s)
    ❌ Tool setup_authentication_jwt failed: Database required
-   ❌ Expected file not found: lib/auth/session.ts
+   ❌ Expected file not found: libs/auth/session.ts
    ❌ Expected package not installed: jose
 ```
 
@@ -205,7 +205,7 @@ next_test_projects/
 │   ├── app/
 │   └── components/
 ├── authentication-system/  
-│   ├── lib/auth/
+│   ├── libs/auth/
 │   ├── components/auth/
 │   └── middleware.ts
 ├── complete-saas-application/
@@ -306,7 +306,7 @@ jobs:
 
 **Missing Files**
 ```  
-❌ Expected file not found: lib/auth/session.ts
+❌ Expected file not found: libs/auth/session.ts
 ```
 - Check tool implementation for file creation
 - Verify file paths and naming conventions

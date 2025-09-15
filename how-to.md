@@ -274,7 +274,7 @@ For each folder that contains a `README.md` file, copy the given content into ea
 > File name example `./user.ts`; we will take user as example, it can be anything, post, to do, article.
 ```typescript
 'use server'
-import { db } from '@/lib/db' // Your database client
+import { db } from '@/libs/db' // Your database client
 
 import { UserModel } from '@/types' // Your types folder
  
@@ -287,7 +287,7 @@ export async function createUser(data: UserModel) {
 
 ```typescript
 'use server'
-import { db } from '@/lib/db'
+import { db } from '@/libs/db'
  
 export async function fetchUsers() {
   const users = await db.user.findMany()
@@ -354,23 +354,23 @@ export function SelectExample() {
   );
 }
 ```
-> **IMPORTANT** if a constant like `ObjectType` in this example is used across all the other components it should be saved under `lib/constants/object-type.ts` in our case, that goes for any other constants.
+> **IMPORTANT** if a constant like `ObjectType` in this example is used across all the other components it should be saved under `libs/constants/object-type.ts` in our case, that goes for any other constants.
 ```
 
 ## SaaS Starter Features
 
-### Authentication (`lib/auth/`)
+### Authentication (`libs/auth/`)
 - **session.ts**: JWT token management, password hashing
 - **middleware.ts**: Action validation, user/team middleware
 
-### Database (`lib/db/`)
+### Database (`libs/db/`)
 - **schema.ts**: Complete database schema (users, teams, team_members, activity_logs)
 - **drizzle.ts**: Database connection setup
 - **queries.ts**: Database query functions
 - **seed.ts**: Initial data seeding with Stripe products
 - **setup.ts**: Stripe CLI setup and configuration
 
-### Payments (`lib/payments/`)
+### Payments (`libs/payments/`)
 - **stripe.ts**: Stripe client, checkout sessions, customer portal
 - **actions.ts**: Server actions for payment flows
 
@@ -434,8 +434,8 @@ pnpm db:migrate
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "db:setup": "npx tsx lib/db/setup.ts",
-    "db:seed": "npx tsx lib/db/seed.ts",
+    "db:setup": "npx tsx libs/db/setup.ts",
+    "db:seed": "npx tsx libs/db/seed.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",

@@ -33,7 +33,7 @@ interface StripePaymentsConfig {
 ### Generated Project Structure
 ```
 project/
-├── lib/
+├── libs/
 │   └── payments/
 │       ├── stripe-client.ts        # Stripe client configuration
 │       ├── stripe-utils.ts         # Payment utilities and helpers
@@ -92,7 +92,7 @@ project/
 
 ### Stripe Client Configuration
 ```typescript
-// lib/payments/stripe-client.ts
+// libs/payments/stripe-client.ts
 import { loadStripe } from '@stripe/stripe-js';
 
 const stripePromise = loadStripe(
@@ -104,7 +104,7 @@ export const getStripe = () => stripePromise;
 
 ### Payment Utilities
 ```typescript
-// lib/payments/stripe-utils.ts
+// libs/payments/stripe-utils.ts
 import { stripe } from './stripe-config';
 
 export async function createCheckoutSession(params: {

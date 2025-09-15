@@ -32,10 +32,10 @@ export async function createEnhancedProjectStructure(projectPath: string): Promi
   // Define enhanced folder structure
   const folders = [
     // Enhanced lib structure
-    "lib/auth",
-    "lib/constants", // existing
-    "lib/db", // existing
-    "lib/payments", // existing
+    "libs/auth",
+    "libs/constants", // existing
+    "libs/db", // existing
+    "libs/payments", // existing
     
     // New enhanced folders
     "libs", // New shared utilities
@@ -339,7 +339,7 @@ export async function createAuthPages(projectPath: string): Promise<void> {
 
     // Create auth layout
     const authLayoutPath = path.join(projectPath, "app", "auth");
-    await fs.writeFile(path.join(authLayoutPath, "layout.tsx"), authPagesTemplate.layoutTemplate);
+    await fs.writeFile(path.join(authLayoutPath, "layout.tsx"), authPagesTemplate.layoutPage);
 
     console.error(`[DEBUG] Auth pages created successfully`);
   } catch (error) {
@@ -399,7 +399,7 @@ This Next.js SaaS application follows a well-organized, scalable architecture in
 │   ├── auth.ts           # Auth validation
 │   ├── team.ts           # Team validation
 │   └── index.ts          # Schema exports
-├── lib/                   # Legacy lib structure
+├── libs/                   # Legacy lib structure
 │   ├── auth/             # JWT utilities
 │   ├── db/               # Database queries
 │   └── payments/         # Stripe integration

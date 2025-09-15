@@ -37,7 +37,7 @@ project/
 │   └── dashboard/
 │       ├── layout.tsx              # Protected dashboard layout
 │       └── page.tsx                # Protected dashboard homepage
-└── lib/
+└── libs/
     └── route-config.ts             # Advanced route configuration (if advanced)
 ```
 
@@ -102,7 +102,7 @@ project/
 ```typescript
 // middleware.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { verifySession } from './lib/auth/session';
+import { verifySession } from './libs/auth/session';
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -136,7 +136,7 @@ export async function middleware(request: NextRequest) {
 ### Protected Dashboard Layout
 ```typescript
 // app/dashboard/layout.tsx
-import { getUser } from '@/lib/auth/session';
+import { getUser } from '@/libs/auth/session';
 import { logoutAction } from '@/actions/auth';
 
 export default async function DashboardLayout({ children }) {
@@ -178,7 +178,7 @@ export default async function DashboardLayout({ children }) {
 
 ### Advanced Route Configuration (if enabled)
 ```typescript
-// lib/route-config.ts
+// libs/route-config.ts
 export const routeConfigs = [
   { path: '/dashboard', requiresAuth: true },
   { path: '/admin', requiresAuth: true, allowedRoles: ['admin'] },

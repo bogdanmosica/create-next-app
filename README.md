@@ -81,7 +81,7 @@ your-project/
 │   ├── ui/
 │   ├── .gitkeep
 │   └── README.md
-├── lib/
+├── libs/
 │   ├── constants/
 │   ├── db/
 │   ├── .gitkeep
@@ -131,3 +131,4 @@ To modify or extend the server:
 ## Error Handling
 
 The server includes comprehensive error handling and will report exactly which step failed if something goes wrong during the Next.js app creation process.
+

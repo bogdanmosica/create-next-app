@@ -576,7 +576,7 @@ export type SupportedLocale = typeof SUPPORTED_LOCALES[number]['code'];
 // === NEXT.JS CONFIG INTEGRATION ===
 
 export const nextConfigI18nTemplate = `/** @type {import('next').NextConfig} */
-const withNextIntl = require('next-intl/plugin')('./libs/i18n-config.ts');
+import withNextIntl from 'next-intl/plugin';
 
 const nextConfig = {
   // Your existing Next.js config
@@ -589,5 +589,7 @@ const nextConfig = {
   // Add other configurations as needed
 };
 
-module.exports = withNextIntl(nextConfig);
+const withI18n = withNextIntl('./libs/i18n-config.ts');
+
+export default withI18n(nextConfig);
 `;

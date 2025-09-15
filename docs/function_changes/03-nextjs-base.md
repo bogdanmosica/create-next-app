@@ -97,7 +97,7 @@ my-app/
 ├── actions/            # Server actions (empty, ready for use)
 ├── components/         # UI components
 │   └── ui/            # shadcn/ui components (if enabled)
-├── lib/               # Utilities and shared code  
+├── libs/               # Utilities and shared code  
 ├── types/             # TypeScript type definitions
 ├── public/            # Static assets
 ├── components.json    # shadcn/ui config (if enabled)

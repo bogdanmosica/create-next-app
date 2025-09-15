@@ -62,7 +62,7 @@ export async function createEnvValidation(projectPath: string): Promise<void> {
  * Creates React Hook Form setup and utilities
  */
 export async function createFormHandling(projectPath: string): Promise<void> {
-  const libPath = path.join(projectPath, "lib");
+  const libPath = path.join(projectPath, "libs");
   const formsPath = path.join(libPath, "forms");
   const componentsPath = path.join(projectPath, "components", "forms");
 
