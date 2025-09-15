@@ -55,7 +55,7 @@ function Update-AgentFile($targetFile, $agentName) {
     if ($newDb -and $newDb -ne 'N/A' -and ($content -notmatch [regex]::Escape($newDb))) { $content = $content -replace '(## Active Technologies\n)', "`$1- $newDb ($currentBranch)`n" }
     if ($content -match '## Recent Changes\n([\s\S]*?)(\n\n|$)') {
         $changesBlock = $matches[1].Trim().Split("`n")
-        $changesBlock = ,"- $currentBranch: Added $newLang + $newFramework" + $changesBlock
+        $changesBlock = ,"- ${currentBranch}: Added ${newLang} + ${newFramework}" + $changesBlock
         $changesBlock = $changesBlock | Where-Object { $_ } | Select-Object -First 3
         $joined = ($changesBlock -join "`n")
         $content = [regex]::Replace($content, '## Recent Changes\n([\s\S]*?)(\n\n|$)', "## Recent Changes`n$joined`n`n")

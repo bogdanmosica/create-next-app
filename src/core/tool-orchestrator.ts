@@ -11,6 +11,7 @@ import { UpfrontValidator } from "../utils/upfront-validator.js";
 import { TokenTracker } from "../utils/token-metrics.js";
 import { PROJECT_PRESETS, getPreset, getAllPresets, validatePresetFeatures, estimateSetupTime, type FeatureConfig } from "../utils/preset-configs.js";
 import { EnhancedErrorHandler, type ErrorContext } from "../utils/error-handler.js";
+import { validateProjectRequest, ErrorReportBuilder, GeneratedApplicationBuilder } from "./models.js";
 
 // Import all tool functions
 import { createNextJsBase } from "../tools/core/nextjs-base.js";
@@ -44,7 +45,26 @@ export class ToolOrchestrator {
    * Execute a tool by name with given arguments
    */
   async executeTool(name: string, args: any): Promise<string> {
-    // 1. Enhanced input validation
+    // 1. Validate using new ProjectRequest schema for create_nextjs_app
+    if (name === 'create_nextjs_app') {
+      const requestValidation = validateProjectRequest(args);
+      if (!requestValidation.valid) {
+        const errorReport = new ErrorReportBuilder()
+          .withError('VALIDATION_ERROR', 'Invalid project request', requestValidation.errors?.join('; '))
+          .withContext('create_nextjs_app', 'input_validation')
+          .withSuggestions(
+            'Please fix the validation errors',
+            requestValidation.errors || ['Check your input parameters'],
+            'error',
+            true
+          )
+          .build();
+        
+        return `❌ **Input Validation Failed**\n\n${requestValidation.errors?.join('\n')}\n\n🔧 Please correct the issues above and try again.`;
+      }
+    }
+    
+    // 2. Enhanced input validation for other tools
     const enhancedValidation = await EnhancedValidator.validateToolInput(name as EnhancedToolName, args);
     
     if (!enhancedValidation.valid) {
@@ -52,7 +72,7 @@ export class ToolOrchestrator {
       return `❌ **Input Validation Failed**\n\n${formattedErrors}\n🔧 Please correct the issues above and try again.`;
     }
 
-    // 2. Upfront path and system validation for tools that create projects  
+    // 3. Upfront path and system validation for tools that create projects  
     // DISABLED: Path validation has issues with Windows drive letters
     if (args.projectPath && ['create_nextjs_app', 'create_nextjs_base'].includes(name)) {
       console.log(`Creating project at: ${args.projectPath}`);
