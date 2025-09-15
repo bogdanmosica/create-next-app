@@ -292,15 +292,150 @@ export class TransactionManager {
       if (this.state.backupPath && await fs.pathExists(this.state.backupPath)) {
         await fs.remove(this.state.backupPath);
       }
-      
+
       if (await fs.pathExists(this.statePath)) {
         await fs.remove(this.statePath);
       }
-      
+
       console.error(`[TRANSACTION] Cleanup completed`);
     } catch (error) {
       console.error(`[WARN] Failed to cleanup transaction: ${error}`);
     }
+  }
+
+  /**
+   * Enhanced rollback with partial failure recovery
+   */
+  async enhancedRollback(continueOnError: boolean = true): Promise<{
+    success: boolean;
+    errors: string[];
+    rolledBackSteps: string[];
+    failedRollbacks: string[];
+  }> {
+    console.error(`[TRANSACTION] Starting enhanced rollback for transaction ${this.state.id}`);
+
+    const errors: string[] = [];
+    const rolledBackSteps: string[] = [];
+    const failedRollbacks: string[] = [];
+
+    // Process steps in reverse order
+    const stepsToRollback = [...this.state.steps]
+      .reverse()
+      .filter(step => step.status === 'completed');
+
+    console.error(`[TRANSACTION] Found ${stepsToRollback.length} completed steps to rollback`);
+
+    for (const step of stepsToRollback) {
+      try {
+        await this.rollbackStep(step);
+        rolledBackSteps.push(step.id);
+        console.error(`[TRANSACTION] Successfully rolled back step: ${step.name}`);
+      } catch (error) {
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        errors.push(`Step ${step.name}: ${errorMsg}`);
+        failedRollbacks.push(step.id);
+
+        console.error(`[TRANSACTION] Failed to rollback step ${step.name}: ${errorMsg}`);
+
+        if (!continueOnError) {
+          console.error(`[TRANSACTION] Stopping rollback due to error in step: ${step.name}`);
+          break;
+        }
+      }
+    }
+
+    // Update transaction state
+    this.state.status = errors.length === 0 ? 'rolled_back' : 'failed';
+    await this.saveState();
+
+    const success = errors.length === 0;
+    console.error(`[TRANSACTION] Enhanced rollback completed - Success: ${success}, Errors: ${errors.length}`);
+
+    return {
+      success,
+      errors,
+      rolledBackSteps,
+      failedRollbacks
+    };
+  }
+
+  /**
+   * Validate rollback is possible
+   */
+  async validateRollbackPossible(): Promise<{
+    canRollback: boolean;
+    reasons: string[];
+    completedSteps: number;
+  }> {
+    const completedSteps = this.state.steps.filter(s => s.status === 'completed');
+    const reasons: string[] = [];
+
+    // Check if there are steps to rollback
+    if (completedSteps.length === 0) {
+      reasons.push('No completed steps to rollback');
+      return { canRollback: false, reasons, completedSteps: 0 };
+    }
+
+    // Check if backup path exists for steps that modified files
+    const stepsWithModifications = completedSteps.filter(s => s.modified && s.modified.length > 0);
+    if (stepsWithModifications.length > 0 && this.state.backupPath && !await fs.pathExists(this.state.backupPath)) {
+      reasons.push('Backup directory missing - cannot restore modified files');
+    }
+
+    // Check if transaction is in a rollbackable state
+    if (this.state.status === 'rolled_back') {
+      reasons.push('Transaction already rolled back');
+    }
+
+    return {
+      canRollback: reasons.length === 0,
+      reasons,
+      completedSteps: completedSteps.length
+    };
+  }
+
+  /**
+   * Force cleanup even if rollback fails
+   */
+  async forceCleanup(): Promise<{
+    cleaned: string[];
+    errors: string[];
+  }> {
+    console.error(`[TRANSACTION] Starting force cleanup for transaction ${this.state.id}`);
+
+    const cleaned: string[] = [];
+    const errors: string[] = [];
+
+    // Try to remove all created files from completed steps
+    for (const step of this.state.steps.filter(s => s.status === 'completed')) {
+      if (step.created) {
+        for (const filePath of step.created) {
+          try {
+            const fullPath = path.resolve(this.state.projectPath, filePath);
+            if (await fs.pathExists(fullPath)) {
+              await fs.remove(fullPath);
+              cleaned.push(filePath);
+              console.error(`[FORCE_CLEANUP] Removed: ${filePath}`);
+            }
+          } catch (error) {
+            const errorMsg = error instanceof Error ? error.message : String(error);
+            errors.push(`Failed to remove ${filePath}: ${errorMsg}`);
+          }
+        }
+      }
+    }
+
+    // Clean up transaction files
+    try {
+      await this.cleanup();
+      cleaned.push('Transaction state files');
+    } catch (error) {
+      errors.push(`Failed to cleanup transaction files: ${error}`);
+    }
+
+    console.error(`[TRANSACTION] Force cleanup completed - Cleaned: ${cleaned.length}, Errors: ${errors.length}`);
+
+    return { cleaned, errors };
   }
 
   /**

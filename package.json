@@ -15,7 +15,12 @@
     "global-uninstall": "npm unlink -g",
     "test": "tsx src/testing/run-tests.ts run",
     "test:cleanup": "tsx src/testing/run-tests.ts cleanup",
-    "test:help": "tsx src/testing/run-tests.ts help"
+    "test:help": "tsx src/testing/run-tests.ts help",
+    "test:nextjs": "node run-nextjs-tests.js",
+    "test:reliability": "node run-nextjs-tests.js all",
+    "test:contract": "node run-nextjs-tests.js contract",
+    "test:integration": "node run-nextjs-tests.js integration",
+    "test:rollback": "node run-nextjs-tests.js rollback"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0",
@@ -27,7 +32,9 @@
     "@types/fs-extra": "^11.0.4",
     "@types/node": "^20.0.0",
     "tsx": "^4.20.5",
-    "typescript": "^5.0.0"
+    "typescript": "^5.0.0",
+    "vitest": "^1.0.0",
+    "@vitest/ui": "^1.0.0"
   },
   "keywords": [
     "mcp",

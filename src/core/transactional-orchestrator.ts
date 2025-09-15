@@ -153,8 +153,18 @@ export class TransactionalOrchestrator {
       transactionLogger.error(`Orchestration failed: ${errorMsg}`);
       
       if (enableRollback) {
-        transactionLogger.warn(`Initiating automatic rollback...`);
-        await this.transaction.rollback();
+        transactionLogger.warn(`Initiating enhanced rollback...`);
+        const rollbackResult = await this.transaction.enhancedRollback(true);
+
+        if (rollbackResult.success) {
+          transactionLogger.info(`Rollback completed successfully - ${rollbackResult.rolledBackSteps.length} steps rolled back`);
+        } else {
+          transactionLogger.error(`Rollback partially failed - ${rollbackResult.errors.length} errors occurred`);
+          transactionLogger.warn(`Attempting force cleanup...`);
+
+          const forceCleanup = await this.transaction.forceCleanup();
+          transactionLogger.info(`Force cleanup completed - ${forceCleanup.cleaned.length} items cleaned, ${forceCleanup.errors.length} errors`);
+        }
       }
       
       throw error;
@@ -266,9 +276,26 @@ All remaining steps have been completed. Your Next.js SaaS application is ready!
 All completed steps are being rolled back to prevent partial state...`;
       
       try {
-        await this.transaction.rollback();
-        rollbackMessage += `
-✅ Rollback completed successfully - project restored to initial state`;
+        const rollbackResult = await this.transaction.enhancedRollback(true);
+
+        if (rollbackResult.success) {
+          rollbackMessage += `
+✅ Rollback completed successfully - ${rollbackResult.rolledBackSteps.length} steps rolled back
+📁 Project restored to initial state`;
+        } else {
+          rollbackMessage += `
+⚠️  Rollback partially failed: ${rollbackResult.errors.length} errors occurred
+🔧 Attempting force cleanup...`;
+
+          const forceCleanup = await this.transaction.forceCleanup();
+          rollbackMessage += `
+📊 Force cleanup results: ${forceCleanup.cleaned.length} items cleaned`;
+
+          if (forceCleanup.errors.length > 0) {
+            rollbackMessage += `
+❌ ${forceCleanup.errors.length} cleanup errors - manual intervention may be required`;
+          }
+        }
       } catch (rollbackError) {
         rollbackMessage += `
 ❌ Rollback failed: ${rollbackError instanceof Error ? rollbackError.message : String(rollbackError)}
