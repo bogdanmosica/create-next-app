@@ -1,11 +1,11 @@
 import fs from "fs-extra";
 import path from "node:path";
-import { biomeConfigTemplate } from "../templates/biome-config.js";
-import { vscodeSettingsTemplate } from "../templates/vscode-settings.js";
-import { drizzleSchemaTemplate } from "../templates/drizzle-schema.js";
-import { drizzleConfigTemplate } from "../templates/drizzle-config.js";
-import { envTemplate } from "../templates/env-template.js";
-import { biomeCustomRulesTemplate, biomeCustomRulesReadmeTemplate } from "../templates/biome-custom-rules.js";
+import { biomeConfigTemplate } from "../templates/config/biome-config.js";
+import { vscodeCodeActionsTemplate } from "../templates/config/vscode-settings.js";
+import { drizzleSchemaTemplate } from "../templates/database/drizzle-schema.js";
+import { drizzleConfigTemplate } from "../templates/database/drizzle-config.js";
+import { envTemplate } from "../templates/config/env-template.js";
+import { biomeCustomRulesTemplate, biomeCustomRulesReadmeTemplate } from "../templates/config/biome-custom-rules.js";
 
 export async function createBiomeConfig(projectPath: string): Promise<void> {
   console.error(`[DEBUG] Creating Biome config at ${projectPath}`);
@@ -33,7 +33,7 @@ export async function createVSCodeSettings(projectPath: string): Promise<void> {
   const vscodeDir = path.join(projectPath, ".vscode");
   await fs.ensureDir(vscodeDir);
 
-  await fs.writeJSON(path.join(vscodeDir, "settings.json"), vscodeSettingsTemplate, { spaces: 2 });
+  await fs.writeJSON(path.join(vscodeDir, "settings.json"), vscodeCodeActionsTemplate, { spaces: 2 });
 }
 
 export async function updatePackageJsonScripts(projectPath: string): Promise<void> {

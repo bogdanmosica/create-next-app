@@ -10,7 +10,7 @@ import {
   dashboardPagesManifest, 
   rootLayoutUpdateTemplate, 
   homePageUpdateTemplate 
-} from "../templates/dashboard-templates.js";
+} from "../templates/saas/dashboard-templates.js";
 
 export interface DashboardOptions {
   includeCharts?: boolean;

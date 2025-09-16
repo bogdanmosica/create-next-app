@@ -12,11 +12,11 @@ import { fileURLToPath } from "node:url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// In source: src/utils/template-loader.ts -> src/template-files/
-// In dist: dist/utils/template-loader.js -> src/template-files/
-const TEMPLATE_FILES_DIR = __dirname.includes('dist') 
-  ? path.join(__dirname, "..", "..", "src", "template-files")
-  : path.join(__dirname, "..", "template-files");
+// In source: src/utils/template-loader.ts -> src/templates/
+// In dist: dist/utils/template-loader.js -> src/templates/
+const TEMPLATE_FILES_DIR = __dirname.includes('dist')
+  ? path.join(__dirname, "..", "..", "src", "templates")
+  : path.join(__dirname, "..", "templates");
 
 /**
  * Load a template file and return its contents as a string

@@ -171,7 +171,7 @@ if (process.env.NODE_ENV === 'production') {
 
 export { db };`;
 
-export const dbQueriesTemplate = `import { desc, and, eq } from 'drizzle-orm';
+export const saasDbQueriesTemplate = `import { desc, and, eq } from 'drizzle-orm';
 import { db } from './drizzle';
 import { activityLogs, teamMembers, teams, users } from '@/models/schema';
 import { cookies } from 'next/headers';

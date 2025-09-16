@@ -1,6 +1,6 @@
 import fs from "fs-extra";
 import path from "node:path";
-import { actionsReadmeTemplate, componentsReadmeTemplate, libReadmeTemplate, libDbReadmeTemplate } from "../templates/readme-templates.js";
+import { actionsReadmeTemplate, componentsReadmeTemplate, libReadmeTemplate, libDbReadmeTemplate } from "../templates/core/readme-templates.js";
 
 export async function createActionsReadme(projectPath: string): Promise<void> {
   await fs.writeFile(path.join(projectPath, "actions", "README.md"), actionsReadmeTemplate);

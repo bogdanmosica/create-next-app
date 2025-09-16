@@ -18,13 +18,13 @@ import {
   authValidationTemplate,
   teamValidationTemplate,
   validationIndexTemplate,
-} from "../templates/enhanced-structure-templates.js";
+} from "../templates/saas/enhanced-structure-templates.js";
 import {
   loginFormTemplate,
   signupFormTemplate,
   authPagesTemplate,
   authActionsTemplate,
-} from "../templates/auth-form-templates.js";
+} from "../templates/i18n/auth-form-templates.js";
 
 export async function createEnhancedProjectStructure(projectPath: string): Promise<void> {
   console.error(`[DEBUG] Creating enhanced project structure at: ${projectPath}`);
