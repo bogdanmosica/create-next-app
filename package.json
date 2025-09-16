@@ -31,10 +31,10 @@
   "devDependencies": {
     "@types/fs-extra": "^11.0.4",
     "@types/node": "^20.0.0",
+    "@vitest/ui": "^1.6.1",
     "tsx": "^4.20.5",
     "typescript": "^5.0.0",
-    "vitest": "^1.0.0",
-    "@vitest/ui": "^1.0.0"
+    "vitest": "^1.6.1"
   },
   "keywords": [
     "mcp",

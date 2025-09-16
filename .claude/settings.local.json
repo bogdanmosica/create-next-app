@@ -50,7 +50,11 @@
       "Read(//d/Projects/starter-test/**)",
       "mcp__nextjs-saas__setup_nextjs_project_wizard",
       "Read(//d/Projects/**)",
-      "Bash(npm test:*)"
+      "Bash(npm test:*)",
+      "Bash(tree:*)",
+      "Bash(npx vitest run:*)",
+      "Bash(npx tsx:*)",
+      "Bash(del validate-consolidation.js)"
     ],
     "defaultMode": "acceptEdits",
     "additionalDirectories": [

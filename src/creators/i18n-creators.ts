@@ -14,13 +14,13 @@ import {
   localeTemplates,
   i18nUtilsTemplate,
   nextConfigI18nTemplate,
-} from "../templates/i18n-templates.js";
+} from "../templates/i18n/i18n-templates.js";
 import {
   i18nLoginFormTemplate,
   i18nSignupFormTemplate,
   i18nAuthPagesTemplates,
   languageSwitcherTemplate,
-} from "../templates/i18n-auth-templates.js";
+} from "../templates/i18n/i18n-auth-templates.js";
 
 export async function createI18nConfiguration(projectPath: string): Promise<void> {
   console.error(`[DEBUG] Creating i18n configuration...`);

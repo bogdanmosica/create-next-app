@@ -4,9 +4,9 @@
  * Adapted for JWT authentication (not Clerk)
  */
 
-import { loadTemplate } from "../utils/template-loader.js";
+import { loadTemplate } from "../../utils/template-loader.js";
 
-export const loginFormTemplate = loadTemplate("auth/components/login-form.tsx");
+export { loginFormTemplate } from "../auth/components/login-form.js";
 
 // TODO: Extract remaining templates (signupFormTemplate, authPagesTemplate, authActionsTemplate)
 // For now, keeping the old embedded templates to maintain functionality

@@ -10,12 +10,12 @@ import {
   envConfigTemplate,
   envExampleTemplate,
   envLocalTemplate
-} from "../templates/env-templates.js";
+} from "../templates/core/env-templates.js";
 import {
   formHooksTemplate,
   formUtilsTemplate,
   formComponentTemplate
-} from "../templates/form-templates.js";
+} from "../templates/forms/form-templates.js";
 import {
   vitestConfigTemplate,
   vitestSetupTemplate,
@@ -25,7 +25,7 @@ import {
   playwrightConfigTemplate,
   sampleUnitTestTemplate,
   sampleE2ETestTemplate
-} from "../templates/testing-templates.js";
+} from "../templates/testing/testing-templates.js";
 import {
   lefthookConfigTemplate,
   lintStagedConfigTemplate,
@@ -33,7 +33,7 @@ import {
   commitizenConfigTemplate,
   vscodeTasksTemplate,
   githubWorkflowTemplate
-} from "../templates/git-hooks-templates.js";
+} from "../templates/testing/git-hooks-templates.js";
 
 /**
  * Creates T3 Env configuration for type-safe environment variables

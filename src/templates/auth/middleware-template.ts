@@ -1,0 +1,1 @@
+export { middlewareTemplateContent as middlewareTemplate } from "./middleware-template-content.js";

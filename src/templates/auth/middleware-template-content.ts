@@ -1,4 +1,9 @@
-import { NextResponse } from 'next/server';
+/**
+ * @fileoverview Middleware Template Content
+ * @description Template string for authentication middleware
+ */
+
+export const middlewareTemplateContent = `import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { signToken, verifyToken } from '@/libs/auth/session';
 
@@ -46,4 +51,4 @@ export async function middleware(request: NextRequest) {
 export const config = {
   matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
   runtime: 'nodejs'
-};
+};`;

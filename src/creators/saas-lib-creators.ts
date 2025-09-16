@@ -6,17 +6,17 @@
 
 import fs from "fs-extra";
 import path from "node:path";
-import { middlewareTemplate } from "../templates/middleware-template.js";
+import { middlewareTemplate } from "../templates/auth/middleware-template.js";
 import {
   authMiddlewareTemplate,
   authSessionTemplate,
   dbDrizzleTemplate,
-  dbQueriesTemplate,
+  saasDbQueriesTemplate,
   dbSeedTemplate,
   dbSetupTemplate,
   paymentsActionsTemplate,
   paymentsStripeTemplate
-} from "../templates/saas-lib-templates.js";
+} from "../templates/saas/saas-lib-templates.js";
 
 export async function createSaaSMiddleware(projectPath: string): Promise<void> {
   await fs.writeFile(path.join(projectPath, "middleware.ts"), middlewareTemplate);
@@ -47,7 +47,7 @@ export async function createSaaSLibStructure(projectPath: string): Promise<void>
   );
   await fs.writeFile(
     path.join(libPath, "db", "queries.ts"),
-    dbQueriesTemplate
+    saasDbQueriesTemplate
   );
   // Schema is now created in models/schema/ by enhanced structure creators
   await fs.writeFile(
