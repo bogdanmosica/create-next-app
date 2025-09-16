@@ -4,46 +4,265 @@
  * Includes form hooks, validation helpers, and example components
  */
 
-export const formHooksTemplate = `import React from "react";
-import { z } from "zod";
-import { useForm, UseFormReturn, DefaultValues } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+export const formHooksTemplate = `'use client';
 
-/**
- * Generic form hook with Zod validation
- * TODO: Fix typing issues with React Hook Form + Zod resolver
- */
-// export function useZodForm<T extends z.ZodSchema<any>>(
-//   schema: T,
-//   defaultValues?: Partial<z.infer<T>>
-// ) {
-//   return useForm<z.infer<T>>({
-//     resolver: zodResolver(schema),
-//     defaultValues,
-//   });
-// }
+import { useForm, UseFormProps, UseFormReturn, FieldValues, Path } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { useMutation, useQuery, UseQueryOptions, UseMutationOptions } from '@tanstack/react-query';
+import { useState, useCallback } from 'react';
 
-/**
- * Form state hook for server actions
- */
-export function useFormState<T>(
-  action: (prevState: T, formData: FormData) => Promise<T>,
-  initialState: T
-): [T, (formData: FormData) => void] {
-  const [state, setState] = React.useState<T>(initialState);
-  const [isPending, startTransition] = React.useTransition();
+// Enhanced useForm hook with Zod validation
+export function useZodForm<T extends FieldValues, TContext = any>(
+  schema: z.ZodSchema<T>,
+  options?: any
+): any {
+  return useForm({
+    resolver: zodResolver(schema as any),
+    ...options,
+  } as any);
+}
 
-  const dispatch = React.useCallback(
-    (formData: FormData) => {
-      startTransition(async () => {
-        const newState = await action(state, formData);
-        setState(newState);
-      });
+// Form state management hook
+export function useFormState<T = any>(initialState?: T) {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+
+  const resetState = useCallback(() => {
+    setError(null);
+    setSuccess(null);
+    setIsLoading(false);
+  }, []);
+
+  const setLoadingState = useCallback((loading: boolean) => {
+    if (loading) {
+      setError(null);
+      setSuccess(null);
+    }
+    setIsLoading(loading);
+  }, []);
+
+  const setErrorState = useCallback((errorMessage: string) => {
+    setError(errorMessage);
+    setSuccess(null);
+    setIsLoading(false);
+  }, []);
+
+  const setSuccessState = useCallback((successMessage: string) => {
+    setSuccess(successMessage);
+    setError(null);
+    setIsLoading(false);
+  }, []);
+
+  return {
+    isLoading,
+    error,
+    success,
+    resetState,
+    setLoadingState,
+    setErrorState,
+    setSuccessState,
+  };
+}
+
+// Multi-step form hook
+export function useMultiStepForm<T extends Record<string, any>>(steps: Array<keyof T>) {
+  const [currentStep, setCurrentStep] = useState(0);
+  const [formData, setFormData] = useState<Partial<T>>({});
+
+  const next = useCallback(() => {
+    setCurrentStep((prev) => Math.min(prev + 1, steps.length - 1));
+  }, [steps.length]);
+
+  const prev = useCallback(() => {
+    setCurrentStep((prev) => Math.max(prev - 1, 0));
+  }, []);
+
+  const goToStep = useCallback((step: number) => {
+    setCurrentStep(Math.max(0, Math.min(step, steps.length - 1)));
+  }, [steps.length]);
+
+  const updateData = useCallback((data: Partial<T>) => {
+    setFormData((prev) => ({ ...prev, ...data }));
+  }, []);
+
+  const resetForm = useCallback(() => {
+    setCurrentStep(0);
+    setFormData({});
+  }, []);
+
+  return {
+    currentStep,
+    currentStepKey: steps[currentStep],
+    isFirstStep: currentStep === 0,
+    isLastStep: currentStep === steps.length - 1,
+    totalSteps: steps.length,
+    formData,
+    next,
+    prev,
+    goToStep,
+    updateData,
+    resetForm,
+  };
+}
+
+// Field array helpers
+export function useFieldArrayHelpers<T extends FieldValues, K extends Path<T>>(
+  form: UseFormReturn<T>,
+  name: K
+) {
+  const fieldArray = form.watch(name) as Array<any> || [];
+
+  const append = useCallback((value: any) => {
+    const newArray = [...fieldArray, value];
+    form.setValue(name, newArray as any);
+  }, [form, name, fieldArray]);
+
+  const remove = useCallback((index: number) => {
+    const newArray = fieldArray.filter((_, i) => i !== index);
+    form.setValue(name, newArray as any);
+  }, [form, name, fieldArray]);
+
+  const move = useCallback((from: number, to: number) => {
+    const newArray = [...fieldArray];
+    const [removed] = newArray.splice(from, 1);
+    newArray.splice(to, 0, removed);
+    form.setValue(name, newArray as any);
+  }, [form, name, fieldArray]);
+
+  return {
+    fields: fieldArray,
+    append,
+    remove,
+    move,
+  };
+}
+
+// Form mutation hook with React Query
+export function useFormMutation<TData = any, TError = Error, TVariables = any, TContext = unknown>(
+  mutationFn: (variables: TVariables) => Promise<TData>,
+  options?: UseMutationOptions<TData, TError, TVariables, TContext>
+) {
+  const formState = useFormState();
+
+  const mutation = useMutation({
+    mutationFn,
+    onMutate: () => {
+      formState.setLoadingState(true);
+      return undefined;
     },
-    [action, state]
+    onError: (error: TError) => {
+      const errorMessage = error instanceof Error ? error.message : 'An error occurred';
+      formState.setErrorState(errorMessage);
+    },
+    onSuccess: (data, variables, context) => {
+      formState.setSuccessState('Operation completed successfully');
+      (options?.onSuccess as any)?.(data, variables, context);
+    },
+    ...options,
+  });
+
+  return {
+    ...mutation,
+    ...formState,
+  };
+}
+
+// Form query hook
+export function useFormQuery<TQueryFnData = unknown, TError = Error, TData = TQueryFnData>(
+  key: any[],
+  queryFn: () => Promise<TQueryFnData>,
+  options?: UseQueryOptions<TQueryFnData, TError, TData>
+) {
+  const query = useQuery({
+    queryKey: key,
+    queryFn,
+    ...options,
+  });
+
+  return {
+    ...query,
+    isLoading: query.isLoading,
+    error: (query.error as Error)?.message || null,
+  };
+}
+
+// Debounced input hook
+export function useDebouncedValue<T>(value: T, delay: number = 300) {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value);
+
+  const updateDebouncedValue = useCallback(
+    (() => {
+      let timeoutId: NodeJS.Timeout;
+      return (newValue: T) => {
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => setDebouncedValue(newValue), delay);
+      };
+    })(),
+    [delay]
   );
 
-  return [state, dispatch];
+  // Update debounced value when the actual value changes
+  useState(() => {
+    updateDebouncedValue(value);
+  });
+
+  return debouncedValue;
+}
+
+// Form persistence hook (localStorage)
+export function useFormPersistence<T extends FieldValues>(
+  key: string,
+  form: UseFormReturn<T>,
+  options: { debounceMs?: number; exclude?: Path<T>[] } = {}
+) {
+  const { debounceMs = 1000, exclude = [] } = options;
+  const formValues = form.watch();
+
+  // Load persisted data on mount
+  useState(() => {
+    try {
+      const saved = localStorage.getItem(key);
+      if (saved) {
+        const data = JSON.parse(saved);
+        Object.keys(data).forEach((fieldName) => {
+          if (!exclude.includes(fieldName as Path<T>)) {
+            form.setValue(fieldName as Path<T>, data[fieldName]);
+          }
+        });
+      }
+    } catch (error) {
+      console.warn('Failed to load persisted form data:', error);
+    }
+  });
+
+  // Debounced save to localStorage
+  const debouncedValues = useDebouncedValue(formValues, debounceMs);
+
+  useState(() => {
+    try {
+      const dataToSave = { ...debouncedValues };
+      exclude.forEach(field => {
+        delete dataToSave[field];
+      });
+      localStorage.setItem(key, JSON.stringify(dataToSave));
+    } catch (error) {
+      console.warn('Failed to persist form data:', error);
+    }
+  });
+
+  const clearPersistedData = useCallback(() => {
+    try {
+      localStorage.removeItem(key);
+    } catch (error) {
+      console.warn('Failed to clear persisted form data:', error);
+    }
+  }, [key]);
+
+  return {
+    clearPersistedData,
+  };
 }`;
 
 export const formUtilsTemplate = `import { z } from "zod";

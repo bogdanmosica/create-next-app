@@ -1,0 +1,393 @@
+name: 🚀 Deployment Pipeline
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*.*.*']
+  release:
+    types: [published]
+
+concurrency:
+  group: deployment-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  NODE_VERSION: '20'
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  # Job 1: Pre-deployment Tests
+  pre-deployment-tests:
+    name: 🧪 Pre-deployment Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+        
+      - name: 🏗️ Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          
+      - name: 📦 Install Dependencies
+        run: npm ci
+        
+      - name: 🧪 Run Critical Tests
+        run: |
+          npm run test:unit
+          npm run test:integration
+          npm run test:contract
+        env:
+          NODE_ENV: production
+          
+      - name: 🔍 Security Pre-check
+        run: |
+          npm audit --audit-level=high
+          npm run lint:security
+        
+      - name: ✅ Mark Tests Complete
+        run: echo "Pre-deployment tests completed successfully"
+
+  # Job 2: Build and Package
+  build-package:
+    name: 📦 Build & Package
+    needs: pre-deployment-tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      package-name: ${{ steps.package.outputs.name }}
+      
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+        
+      - name: 🏗️ Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          registry-url: 'https://registry.npmjs.org'
+          
+      - name: 📦 Install Dependencies
+        run: npm ci
+        
+      - name: 🏗️ Build Project
+        run: npm run build
+        env:
+          NODE_ENV: production
+          
+      - name: 📋 Extract Version
+        id: version
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Version: $VERSION"
+          
+      - name: 📦 Extract Package Name
+        id: package
+        run: |
+          PACKAGE_NAME=$(node -p "require('./package.json').name")
+          echo "name=$PACKAGE_NAME" >> $GITHUB_OUTPUT
+          echo "Package: $PACKAGE_NAME"
+          
+      - name: 📁 Create Distribution Package
+        run: |
+          npm pack
+          tar -czf distribution.tar.gz dist/ package.json README.md
+          
+      - name: 📊 Upload Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts-${{ steps.version.outputs.version }}
+          path: |
+            dist/
+            *.tgz
+            distribution.tar.gz
+          retention-days: 30
+
+  # Job 3: Docker Build (Optional)
+  docker-build:
+    name: 🐳 Docker Build
+    needs: [pre-deployment-tests, build-package]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    if: contains(github.event.head_commit.message, '[docker]') || github.ref == 'refs/heads/main'
+    
+    permissions:
+      contents: read
+      packages: write
+      
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+        
+      - name: 🐳 Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        
+      - name: 🔐 Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: 🏷️ Extract Metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,prefix={{branch}}-
+            
+      - name: 🏗️ Build and Push Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # Job 4: NPM Package Publish
+  npm-publish:
+    name: 📢 NPM Publish
+    needs: [build-package]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: github.event_name == 'release' || (github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, '[publish]'))
+    
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+        
+      - name: 🏗️ Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          registry-url: 'https://registry.npmjs.org'
+          
+      - name: 📦 Install Dependencies
+        run: npm ci
+        
+      - name: 📥 Download Build Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifacts-${{ needs.build-package.outputs.version }}
+          
+      - name: 🔍 Pre-publish Validation
+        run: |
+          npm run test:package
+          npm run lint:final
+          
+      - name: 📢 Publish to NPM
+        run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  # Job 5: GitHub Release
+  github-release:
+    name: 🏷️ GitHub Release
+    needs: [build-package]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    
+    permissions:
+      contents: write
+      
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          
+      - name: 📥 Download Build Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifacts-${{ needs.build-package.outputs.version }}
+          path: ./release-artifacts
+          
+      - name: 📝 Generate Release Notes
+        id: release-notes
+        run: |
+          # Generate changelog between tags
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD~1 2>/dev/null || echo "")
+          CURRENT_TAG=${GITHUB_REF#refs/tags/}
+          
+          echo "## 🚀 What's New in $CURRENT_TAG" > release-notes.md
+          echo "" >> release-notes.md
+          
+          if [ -n "$PREV_TAG" ]; then
+            echo "### 📋 Changes since $PREV_TAG:" >> release-notes.md
+            git log --pretty=format:"- %s (%h)" $PREV_TAG..HEAD >> release-notes.md
+          else
+            echo "### 📋 Initial Release" >> release-notes.md
+            git log --pretty=format:"- %s (%h)" >> release-notes.md
+          fi
+          
+          echo "" >> release-notes.md
+          echo "### 📊 Package Details:" >> release-notes.md
+          echo "- **Version**: $CURRENT_TAG" >> release-notes.md
+          echo "- **Package**: ${{ needs.build-package.outputs.package-name }}" >> release-notes.md
+          echo "- **Node.js**: Compatible with Node.js 18+" >> release-notes.md
+          
+      - name: 🏷️ Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          body_path: release-notes.md
+          files: |
+            release-artifacts/*.tgz
+            release-artifacts/distribution.tar.gz
+          draft: false
+          prerelease: ${{ contains(github.ref, '-') }}
+          generate_release_notes: true
+
+  # Job 6: Documentation Deploy
+  docs-deploy:
+    name: 📚 Deploy Documentation
+    needs: [build-package]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    if: github.ref == 'refs/heads/main'
+    
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+      
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+        
+      - name: 🏗️ Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          
+      - name: 📦 Install Dependencies
+        run: npm ci
+        
+      - name: 📚 Build Documentation
+        run: |
+          npm run docs:build
+          npm run coverage:generate
+          
+          # Create combined documentation site
+          mkdir -p docs-site
+          cp -r docs/* docs-site/
+          cp -r coverage/reports docs-site/coverage
+          
+      - name: 📤 Upload Pages Artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs-site/
+          
+      - name: 🌐 Deploy to GitHub Pages
+        uses: actions/deploy-pages@v4
+
+  # Job 7: Post-deployment Verification
+  post-deployment-verification:
+    name: ✅ Post-deployment Verification
+    needs: [npm-publish, github-release]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    if: always() && (needs.npm-publish.result == 'success' || needs.github-release.result == 'success')
+    
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+        
+      - name: 🔍 Verify NPM Package
+        if: needs.npm-publish.result == 'success'
+        run: |
+          PACKAGE_NAME="${{ needs.build-package.outputs.package-name }}"
+          VERSION="${{ needs.build-package.outputs.version }}"
+          
+          # Wait for package to be available
+          sleep 30
+          
+          # Verify package exists and is installable
+          npm view $PACKAGE_NAME@$VERSION
+          
+          # Test installation in clean environment
+          mkdir test-install && cd test-install
+          npm init -y
+          npm install $PACKAGE_NAME@$VERSION
+          
+          echo "✅ NPM package verification successful"
+          
+      - name: 🔍 Verify GitHub Release
+        if: needs.github-release.result == 'success'
+        run: |
+          TAG_NAME=${GITHUB_REF#refs/tags/}
+          
+          # Verify release exists
+          curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            "https://api.github.com/repos/${{ github.repository }}/releases/tags/$TAG_NAME" \
+            | jq -e '.tag_name == "'$TAG_NAME'"'
+            
+          echo "✅ GitHub release verification successful"
+          
+      - name: 📊 Generate Deployment Report
+        run: |
+          echo "## 🚀 Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Component | Status | Version |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----------|--------|---------|" >> $GITHUB_STEP_SUMMARY
+          echo "| NPM Package | ${{ needs.npm-publish.result }} | ${{ needs.build-package.outputs.version }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| GitHub Release | ${{ needs.github-release.result }} | ${{ needs.build-package.outputs.version }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Documentation | ${{ needs.docs-deploy.result }} | Latest |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          echo "### 📦 Package Information:" >> $GITHUB_STEP_SUMMARY
+          echo "- **Name**: ${{ needs.build-package.outputs.package-name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Version**: ${{ needs.build-package.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Registry**: NPM" >> $GITHUB_STEP_SUMMARY
+          echo "- **Install Command**: \`npm install ${{ needs.build-package.outputs.package-name }}@${{ needs.build-package.outputs.version }}\`" >> $GITHUB_STEP_SUMMARY
+
+  # Job 8: Notification & Monitoring
+  deployment-notification:
+    name: 📱 Deployment Notification
+    needs: [post-deployment-verification]
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+      - name: 📱 Send Success Notification
+        if: needs.post-deployment-verification.result == 'success'
+        run: |
+          echo "🎉 Deployment completed successfully!"
+          echo "Package: ${{ needs.build-package.outputs.package-name }}@${{ needs.build-package.outputs.version }}"
+          
+      - name: 🚨 Send Failure Notification
+        if: needs.post-deployment-verification.result == 'failure'
+        run: |
+          echo "::error::Deployment verification failed!"
+          echo "Please check the deployment logs and verify manually."
+          exit 1
+
+# Global environment variables for deployment
+env:
+  # Production environment settings
+  NODE_ENV: production
+  
+  # Deployment configuration
+  DEPLOYMENT_ENVIRONMENT: production
+  
+  # Security settings
+  DISABLE_TELEMETRY: true
+  DO_NOT_TRACK: 1

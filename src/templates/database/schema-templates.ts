@@ -3,7 +3,7 @@
  * @description Templates for Drizzle ORM schemas in generated applications
  */
 
-export const dbSchemaTemplate = `import { pgTable, text, timestamp, uuid, boolean, jsonb } from 'drizzle-orm/pg-core';
+export const dbSchemaTemplate = `import { pgTable, text, timestamp, varchar, boolean, json, pgEnum } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { z } from 'zod';
@@ -91,12 +91,14 @@ export const insertTeamMemberSchema = createInsertSchema(teamMembers);
 export const selectTeamMemberSchema = createSelectSchema(teamMembers);
 
 // Types
-export type User = z.infer<typeof selectUserSchema>;
-export type NewUser = z.infer<typeof insertUserSchema>;
-export type Team = z.infer<typeof selectTeamSchema>;
-export type NewTeam = z.infer<typeof insertTeamSchema>;
-export type TeamMember = z.infer<typeof selectTeamMemberSchema>;
-export type NewTeamMember = z.infer<typeof insertTeamMemberSchema>;
+export type User = typeof users.$inferSelect;
+export type NewUser = typeof users.$inferInsert;
+export type Team = typeof teams.$inferSelect;
+export type NewTeam = typeof teams.$inferInsert;
+export type TeamMember = typeof teamMembers.$inferSelect;
+export type NewTeamMember = typeof teamMembers.$inferInsert;
+export type ActivityLog = typeof activityLogs.$inferSelect;
+export type NewActivityLog = typeof activityLogs.$inferInsert;
 
 export type TeamDataWithMembers = Team & {
   teamMembers: (TeamMember & {

@@ -1,0 +1,404 @@
+name: 🔒 Security & Dependency Scanning
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  schedule:
+    # Run security scans daily at 2 AM UTC
+    - cron: '0 2 * * *'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Job 1: Dependency Vulnerability Scanning
+  dependency-scan:
+    name: 🔍 Dependency Vulnerability Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+        
+      - name: 🏗️ Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          
+      - name: 📦 Install Dependencies
+        run: npm ci
+        
+      - name: 🔍 Run npm audit
+        run: |
+          npm audit --audit-level=moderate --json > audit-results.json || true
+          npm audit --audit-level=moderate
+        continue-on-error: true
+        
+      - name: 📊 Upload Audit Results
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-audit-results
+          path: audit-results.json
+          retention-days: 30
+
+  # Job 2: CodeQL Security Analysis
+  codeql-analysis:
+    name: 🔬 CodeQL Security Analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+      
+    strategy:
+      fail-fast: false
+      matrix:
+        language: ['typescript', 'javascript']
+        
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+        
+      - name: 🔬 Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          config-file: ./.github/codeql/codeql-config.yml
+          
+      - name: 🏗️ Autobuild
+        uses: github/codeql-action/autobuild@v3
+        
+      - name: 🔍 Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{matrix.language}}"
+
+  # Job 3: SAST (Static Application Security Testing)
+  sast-scan:
+    name: 🛡️ SAST Security Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+        
+      - name: 🏗️ Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          
+      - name: 📦 Install Dependencies
+        run: npm ci
+        
+      - name: 🛡️ Run ESLint Security Plugin
+        run: |
+          npx eslint . \
+            --ext .ts,.js,.tsx,.jsx \
+            --config .eslintrc.security.js \
+            --format json \
+            --output-file eslint-security-results.json || true
+        continue-on-error: true
+        
+      - name: 🔍 Run Semgrep Security Scan
+        uses: returntocorp/semgrep-action@v1
+        with:
+          config: >-
+            p/security-audit
+            p/typescript
+            p/javascript
+            p/react
+            p/nextjs
+          generateSarif: "1"
+          
+      - name: 📊 Upload SAST Results
+        uses: actions/upload-artifact@v4
+        with:
+          name: sast-scan-results
+          path: |
+            eslint-security-results.json
+            semgrep.sarif
+          retention-days: 30
+
+  # Job 4: License Compliance Check
+  license-check:
+    name: 📄 License Compliance Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+        
+      - name: 🏗️ Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          
+      - name: 📦 Install Dependencies
+        run: npm ci
+        
+      - name: 📄 Install License Checker
+        run: npm install -g license-checker
+        
+      - name: 📋 Generate License Report
+        run: |
+          license-checker --json --out license-report.json
+          license-checker --summary
+          
+      - name: 🔍 Check for Restricted Licenses
+        run: |
+          # Define restricted licenses
+          RESTRICTED_LICENSES="GPL-2.0 GPL-3.0 AGPL-1.0 AGPL-3.0"
+          
+          # Check for restricted licenses
+          for license in $RESTRICTED_LICENSES; do
+            if grep -q "$license" license-report.json; then
+              echo "::error::Restricted license found: $license"
+              exit 1
+            fi
+          done
+          
+          echo "✅ No restricted licenses found"
+          
+      - name: 📊 Upload License Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: license-compliance-report
+          path: license-report.json
+          retention-days: 30
+
+  # Job 5: Secret Scanning
+  secret-scan:
+    name: 🔐 Secret Scanning
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          
+      - name: 🔐 Run TruffleHog Secret Scan
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: main
+          head: HEAD
+          extra_args: --debug --only-verified
+          
+      - name: 🔍 Run GitLeaks Secret Scan
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
+
+  # Job 6: Container Security Scan (if using Docker)
+  container-scan:
+    name: 🐳 Container Security Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    if: contains(github.event.head_commit.message, '[docker]') || github.event_name == 'schedule'
+    
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+        
+      - name: 🐳 Build Docker Image
+        run: |
+          if [ -f Dockerfile ]; then
+            docker build -t mcp-nextjs-app:latest .
+          else
+            echo "No Dockerfile found, skipping container scan"
+            exit 0
+          fi
+          
+      - name: 🔍 Run Trivy Security Scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'mcp-nextjs-app:latest'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          
+      - name: 📊 Upload Trivy Results
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+  # Job 7: Supply Chain Security
+  supply-chain-scan:
+    name: 🔗 Supply Chain Security
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+        
+      - name: 🏗️ Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          
+      - name: 📦 Install Dependencies
+        run: npm ci
+        
+      - name: 🔗 Run Socket.dev Supply Chain Scan
+        uses: SocketDev/socket-security-action@v1
+        with:
+          api-key: ${{ secrets.SOCKET_SECURITY_API_KEY }}
+          comment-pr: true
+        continue-on-error: true
+        
+      - name: 📊 Generate SBOM (Software Bill of Materials)
+        run: |
+          npx @cyclonedx/cyclonedx-npm --output-file sbom.json
+          
+      - name: 📊 Upload SBOM
+        uses: actions/upload-artifact@v4
+        with:
+          name: software-bill-of-materials
+          path: sbom.json
+          retention-days: 90
+
+  # Job 8: Security Policy Compliance
+  policy-compliance:
+    name: 📋 Security Policy Compliance
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+        
+      - name: 📋 Check Security Policy Files
+        run: |
+          # Check for required security files
+          FILES=(
+            "SECURITY.md"
+            ".github/SECURITY.md"
+            "security.txt"
+            ".well-known/security.txt"
+          )
+          
+          FOUND=false
+          for file in "${FILES[@]}"; do
+            if [ -f "$file" ]; then
+              echo "✅ Found security policy: $file"
+              FOUND=true
+              break
+            fi
+          done
+          
+          if [ "$FOUND" = false ]; then
+            echo "::warning::No security policy file found. Consider adding SECURITY.md"
+          fi
+          
+      - name: 📋 Check for Security Headers Configuration
+        run: |
+          # Check for security headers in Next.js config
+          if [ -f "next.config.ts" ] || [ -f "next.config.js" ]; then
+            if grep -q "headers" next.config.*; then
+              echo "✅ Security headers configuration found"
+            else
+              echo "::warning::Consider adding security headers to Next.js configuration"
+            fi
+          fi
+          
+      - name: 📋 Check Environment Security
+        run: |
+          # Check for .env files in repository
+          if find . -name ".env*" -not -path "./node_modules/*" | grep -v ".env.example"; then
+            echo "::error::Environment files found in repository. These should not be committed."
+            exit 1
+          else
+            echo "✅ No environment files found in repository"
+          fi
+
+  # Job 9: Security Metrics Dashboard
+  security-dashboard:
+    name: 📊 Security Metrics Dashboard
+    needs: 
+      - dependency-scan
+      - codeql-analysis
+      - sast-scan
+      - license-check
+      - secret-scan
+      - supply-chain-scan
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+        
+      - name: 📥 Download Security Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: '*-results*'
+          merge-multiple: true
+          path: ./security-results
+          
+      - name: 📊 Generate Security Dashboard
+        run: |
+          echo "## 🔒 Security Scan Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Security Check | Status | Details |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------------|--------|---------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Dependency Scan | ${{ needs.dependency-scan.result }} | npm audit |" >> $GITHUB_STEP_SUMMARY
+          echo "| CodeQL Analysis | ${{ needs.codeql-analysis.result }} | Static analysis |" >> $GITHUB_STEP_SUMMARY
+          echo "| SAST Scan | ${{ needs.sast-scan.result }} | Security linting |" >> $GITHUB_STEP_SUMMARY
+          echo "| License Check | ${{ needs.license-check.result }} | License compliance |" >> $GITHUB_STEP_SUMMARY
+          echo "| Secret Scan | ${{ needs.secret-scan.result }} | Secret detection |" >> $GITHUB_STEP_SUMMARY
+          echo "| Supply Chain | ${{ needs.supply-chain-scan.result }} | Dependency security |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # Count successful security checks
+          SUCCESS_COUNT=0
+          CHECKS=("${{ needs.dependency-scan.result }}" "${{ needs.codeql-analysis.result }}" "${{ needs.sast-scan.result }}" "${{ needs.license-check.result }}" "${{ needs.secret-scan.result }}" "${{ needs.supply-chain-scan.result }}")
+          
+          for check in "${CHECKS[@]}"; do
+            if [[ "$check" == "success" ]]; then
+              ((SUCCESS_COUNT++))
+            fi
+          done
+          
+          echo "### 📈 Security Score: $SUCCESS_COUNT/6" >> $GITHUB_STEP_SUMMARY
+          
+          if [[ $SUCCESS_COUNT -eq 6 ]]; then
+            echo "🛡️ **Excellent! All security checks passed.**" >> $GITHUB_STEP_SUMMARY
+          elif [[ $SUCCESS_COUNT -ge 4 ]]; then
+            echo "✅ **Good security posture. Minor issues to address.**" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⚠️ **Security concerns detected. Please review and address issues.**" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+      - name: 📊 Upload Security Dashboard
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-dashboard
+          path: security-results/
+          retention-days: 90
+
+# Global environment variables for security workflows
+env:
+  # Security scanning configuration
+  SECURITY_SCAN_LEVEL: "strict"
+  
+  # Enable security features
+  NODE_OPTIONS: "--max-old-space-size=4096"
+  
+  # Disable telemetry for security reasons
+  DISABLE_TELEMETRY: true
+  DO_NOT_TRACK: 1

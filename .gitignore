@@ -51,3 +51,9 @@ test_projects_*
 
 # Windows null device redirection file
 nul
+# Test build validation folders
+test-build-validation*/
+test-*
+
+# MCP Transaction files
+.mcp-transaction*.json

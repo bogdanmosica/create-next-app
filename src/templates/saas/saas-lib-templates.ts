@@ -100,45 +100,53 @@ export async function comparePasswords(
  return compare(plainTextPassword, hashedPassword);
 }
 
-type SessionData = {
+export type SessionPayload = {
  user: { id: string };
- expires: string;
+ exp: number;
 };
 
-export async function signToken(payload: SessionData) {
- return await new SignJWT(payload)
- .setProtectedHeader({ alg: 'HS256' })
- .setIssuedAt()
- .setExpirationTime('1 day from now')
- .sign(key);
+export async function createSession(payload: Omit<SessionPayload, 'exp'>): Promise<string> {
+ const token = await new SignJWT(payload)
+   .setProtectedHeader({ alg: 'HS256' })
+   .setIssuedAt()
+   .setExpirationTime('7d')
+   .sign(key);
+ return token;
 }
 
-export async function verifyToken(input: string) {
- const { payload } = await jwtVerify(input, key, {
- algorithms: ['HS256'],
- });
- return payload as SessionData;
+export async function verifySession(input: string): Promise<SessionPayload | null> {
+ try {
+   const { payload } = await jwtVerify(input, key, {
+     algorithms: ['HS256'],
+   });
+   return payload as SessionPayload;
+ } catch (error) {
+   return null;
+ }
 }
 
-export async function getSession() {
+export async function getSession(): Promise<SessionPayload | null> {
  const session = (await cookies()).get('session')?.value;
  if (!session) return null;
- return await verifyToken(session);
+ return await verifySession(session);
 }
 
-export async function setSession(user: NewUser) {
- const expiresInOneDay = new Date(Date.now() + 24 * 60 * 60 * 1000);
- const session: SessionData = {
- user: { id: user.id! },
- expires: expiresInOneDay.toISOString(),
+export async function setSession(user: { id: string }) {
+ const expiresInOneWeek = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+ const sessionPayload: Omit<SessionPayload, 'exp'> = {
+   user: { id: user.id },
  };
- const encryptedSession = await signToken(session);
+ const encryptedSession = await createSession(sessionPayload);
  (await cookies()).set('session', encryptedSession, {
- expires: expiresInOneDay,
- httpOnly: true,
- secure: true,
- sameSite: 'lax'
+   expires: expiresInOneWeek,
+   httpOnly: true,
+   secure: true,
+   sameSite: 'lax'
  });
+}
+
+export async function deleteSession() {
+ (await cookies()).delete('session');
 }`;
 
 // DB templates
@@ -175,7 +183,7 @@ export const saasDbQueriesTemplate = `import { desc, and, eq } from 'drizzle-orm
 import { db } from './drizzle';
 import { activityLogs, teamMembers, teams, users } from '@/models/schema';
 import { cookies } from 'next/headers';
-import { verifyToken } from '@/libs/auth/session';
+import { verifySession } from '@/libs/auth/session';
 
 export async function getUser() {
  const sessionCookie = (await cookies()).get('session');
@@ -183,16 +191,12 @@ export async function getUser() {
  return null;
  }
 
- const sessionData = await verifyToken(sessionCookie.value);
+ const sessionData = await verifySession(sessionCookie.value);
  if (
  !sessionData ||
  !sessionData.user ||
  typeof sessionData.user.id !== 'string'
  ) {
- return null;
- }
-
- if (new Date(sessionData.expires) < new Date()) {
  return null;
  }
 
@@ -209,14 +213,32 @@ export async function getUser() {
  return user[0];
 }
 
+export async function getUserByEmail(email: string) {
+ const user = await db
+ .select()
+ .from(users)
+ .where(and(eq(users.email, email), eq(users.isDeleted, false)))
+ .limit(1);
+
+ return user.length > 0 ? user[0] : null;
+}
+
+export async function createUser(userData: { email: string; hashedPassword: string; name?: string }) {
+ const newUser = await db
+ .insert(users)
+ .values(userData)
+ .returning();
+
+ return newUser[0];
+}
+
 export async function getTeamForUser(userId: string) {
  // First get the team
- const userIdInt = parseInt(userId, 10);
  const teamResult = await db
  .select()
  .from(teams)
  .innerJoin(teamMembers, eq(teams.id, teamMembers.teamId))
- .where(eq(teamMembers.userId, userIdInt))
+ .where(eq(teamMembers.userId, userId))
  .limit(1);
 
  if (teamResult.length === 0) {
@@ -242,7 +264,7 @@ export async function getTeamForUser(userId: string) {
 
  return {
  ...team,
- members: membersResult.map(result => ({
+ teamMembers: membersResult.map(result => ({
  id: result.id,
  teamId: result.teamId,
  userId: result.userId,

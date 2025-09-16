@@ -54,7 +54,9 @@
       "Bash(tree:*)",
       "Bash(npx vitest run:*)",
       "Bash(npx tsx:*)",
-      "Bash(del validate-consolidation.js)"
+      "Bash(del validate-consolidation.js)",
+      "Bash(xargs sed:*)",
+      "Bash(sed:*)"
     ],
     "defaultMode": "acceptEdits",
     "additionalDirectories": [

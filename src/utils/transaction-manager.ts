@@ -78,6 +78,11 @@ export class TransactionManager {
    * Save current transaction state to disk
    */
   async saveState(): Promise<void> {
+    // Skip saving transaction files if disabled via environment variable
+    if (process.env.MCP_DISABLE_TRANSACTION_FILES === 'true') {
+      return;
+    }
+
     try {
       await fs.ensureDir(path.dirname(this.statePath));
       await fs.writeJSON(this.statePath, this.state, { spaces: 2 });
