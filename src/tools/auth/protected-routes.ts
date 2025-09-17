@@ -126,7 +126,7 @@ export async function setupProtectedRoutes(config: ProtectedRoutesConfig): Promi
 }
 
 function createMiddlewareTemplate(protectionLevel: string, hasAuth: boolean): string {
-  const authImports = hasAuth ? `import { verifySession } from './libs/auth/session.js';` : '';
+  const authImports = hasAuth ? `import { verifySession } from './libs/auth/session';` : '';
   
   return `/**
  * @fileoverview Next.js Middleware for Route Protection

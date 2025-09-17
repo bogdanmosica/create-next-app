@@ -57,7 +57,7 @@ export async function setupDrizzleOrm(config: DrizzleOrmConfig): Promise<string>
     console.error(`[STEP 1/6] ${step1}`);
     
     // Install core Drizzle packages
-    const corePackages = ["drizzle-orm"];
+    const corePackages = ["drizzle-orm", "drizzle-zod"];
     let driverPackages: string[] = [];
     let devPackages = ["drizzle-kit"];
 
@@ -119,7 +119,7 @@ export async function setupDrizzleOrm(config: DrizzleOrmConfig): Promise<string>
       await fs.writeFile(path.join(modelsDir, "user.ts"), userSchemaTemplate);
       
       // Create schema index file
-      const schemaIndexTemplate = `export * from './user.js';\n`;
+      const schemaIndexTemplate = `export * from './user';\n`;
       await fs.writeFile(path.join(modelsDir, "index.ts"), schemaIndexTemplate);
     } else {
       // Create basic schema structure
@@ -190,7 +190,7 @@ function createDbConnectionTemplate(provider: string): string {
 
 import { drizzle } from 'drizzle-orm/neon-http';
 import { neon } from '@neondatabase/serverless';
-import * as schema from '../models/index.js';
+import * as schema from '../models/index';
 
 if (!process.env.DATABASE_URL) {
   throw new Error('DATABASE_URL environment variable is required');
@@ -211,7 +211,7 @@ export { schema };
 
 import { drizzle } from 'drizzle-orm/mysql2';
 import mysql from 'mysql2/promise';
-import * as schema from '../models/index.js';
+import * as schema from '../models/index';
 
 if (!process.env.DATABASE_URL) {
   throw new Error('DATABASE_URL environment variable is required');
@@ -235,7 +235,7 @@ export { schema };
 
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 import Database from 'better-sqlite3';
-import * as schema from '../models/index.js';
+import * as schema from '../models/index';
 
 const sqlite = new Database(process.env.DATABASE_URL || 'sqlite.db');
 export const db = drizzle(sqlite, { schema });
@@ -304,7 +304,7 @@ function createMigrationUtilsTemplate(provider: string): string {
  */
 
 import { migrate } from 'drizzle-orm/${provider === "postgresql" ? "neon-http" : provider === "mysql" ? "mysql2" : "better-sqlite3"}/migrator';
-import { db } from './index.js';
+import { db } from './index';
 
 async function runMigrations() {
   console.log('Running migrations...');

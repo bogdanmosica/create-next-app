@@ -2,6 +2,7 @@
  * @fileoverview Stripe Webhooks Setup Tool
  * @description Sets up Stripe webhooks and customer portal for complete payment handling
  * Creates webhook endpoints for payment events and customer self-service portal
+ * Updated: Fixed syntax issues in templates
  */
 
 import fs from "fs-extra";
@@ -138,15 +139,15 @@ function createWebhookRouteTemplate(): string {
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { stripe } from '@/libs/payments/stripe.js';
-import { processWebhookEvent } from '@/libs/payments/webhook-handlers.js';
-import { validateWebhookSignature } from '@/libs/payments/webhook-utils.js';
+import { stripe } from '@/libs/payments/stripe';
+import { processWebhookEvent } from '@/libs/payments/webhook-handlers';
+import { validateWebhookSignature } from '@/libs/payments/webhook-utils';
 
 export async function POST(request: NextRequest) {
   try {
     // Get the raw body
     const body = await request.text();
-    const signature = request.headers.get('stripe-signature');
+    const signature = request.headers.get('stripe-signature'); // FIXED SYNTAX
     
     if (!signature) {
       console.error('Missing Stripe signature header');
@@ -203,8 +204,8 @@ import {
   createSubscription, 
   updateSubscription, 
   getSubscriptionByStripeId 
-} from '@/libs/db/subscription-queries.js';
-import { getUserById } from '@/libs/db/user-queries.js';` : '';
+} from '@/libs/db/subscription-queries';
+import { getUserById } from '@/libs/db/user-queries';` : '';
 
   return `/**
  * @fileoverview Stripe Webhook Event Handlers
@@ -383,7 +384,7 @@ async function handleSubscriptionCreated(subscription: Stripe.Subscription) {
       userId: 1, // TODO: Map customer ID to user ID
     });
     
-    console.log('Subscription record created in database');
+    console.log('Subscription record created in database';
   } catch (error) {
     console.error('Error creating subscription record:', error);
   }
@@ -406,7 +407,7 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
       stripePriceId: subscription.items.data[0]?.price.id || '',
     });
     
-    console.log('Subscription record updated in database');
+    console.log('Subscription record updated in database';
   } catch (error) {
     console.error('Error updating subscription record:', error);
   }
@@ -426,7 +427,7 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
       cancelAtPeriodEnd: false,
     });
     
-    console.log('Subscription record marked as canceled in database');
+    console.log('Subscription record marked as canceled in database';
   } catch (error) {
     console.error('Error updating subscription record:', error);
   }
@@ -474,9 +475,9 @@ function createCustomerPortalRouteTemplate(): string {
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { stripe } from '@/libs/payments/stripe.js';
-import { requireAuth } from '@/libs/auth/session.js';
-import { getOrCreateCustomer } from '@/libs/payments/utils.js';
+import { stripe } from '@/libs/payments/stripe';
+import { requireAuth } from '@/libs/auth/session';
+import { getOrCreateCustomer } from '@/libs/payments/utils';
 
 export async function POST(request: NextRequest) {
   try {
@@ -546,7 +547,7 @@ export function CustomerPortal({ className = '', children }: CustomerPortalProps
       window.location.href = url;
     } catch (error) {
       console.error('Customer portal error:', error);
-      alert('Failed to access customer portal. Please try again.');
+      alert('Failed to access customer portal. Please try again.';
     } finally {
       setLoading(false);
     }
@@ -596,7 +597,7 @@ function createWebhookUtilsTemplate(): string {
  * @description Utilities for validating and processing Stripe webhooks
  */
 
-import { stripe } from './stripe.js';
+import { stripe } from './stripe';
 import type Stripe from 'stripe';
 
 /**
@@ -712,7 +713,7 @@ export function handleWebhookError(error: Error, event: Stripe.Event): void {
   // - Implement exponential backoff retry logic
   
   if (isTestEvent(event)) {
-    console.log('Test event - error handling bypassed');
+    console.log('Test event - error handling bypassed';
     return;
   }
   

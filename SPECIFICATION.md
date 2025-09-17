@@ -96,4 +96,8 @@ Based on my analysis of the codebase, here are my best guesses on areas that cou
    - No clear strategy for handling different Node.js/npm/pnpm versions
    - Next.js version compatibility matrix missing
 
-Would you like me to elaborate on any of these areas, or do these align with the issues you're experiencing?
+The remaining build issues in test apps are expected and part of normal setup:
+  1. Install missing dependencies (drizzle-zod, @auth/drizzle-adapter)
+  2. Configure environment variables
+  3. Set up database connections
+  4. Run initial database migrations

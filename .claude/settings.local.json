@@ -56,7 +56,9 @@
       "Bash(npx tsx:*)",
       "Bash(del validate-consolidation.js)",
       "Bash(xargs sed:*)",
-      "Bash(sed:*)"
+      "Bash(sed:*)",
+      "Bash(grep:*)",
+      "Bash(if exist test-fixed-templates rmdir /s /q test-fixed-templates)"
     ],
     "defaultMode": "acceptEdits",
     "additionalDirectories": [

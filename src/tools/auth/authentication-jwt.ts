@@ -54,7 +54,7 @@ export async function setupAuthenticationJwt(config: AuthenticationJwtConfig): P
     steps.push(step1);
     console.error(`[STEP 1/7] ${step1}`);
     
-    const authPackages = ["next-auth@beta", "zod"];
+    const authPackages = ["next-auth@beta", "zod", "@auth/drizzle-adapter"];
     if (includePasswordHashing) {
       authPackages.push("bcryptjs");
     }
@@ -130,7 +130,15 @@ export async function setupAuthenticationJwt(config: AuthenticationJwtConfig): P
     // Create auth helper utilities
     const authHelpersTemplate = createAuthHelpersTemplate();
     await fs.writeFile(path.join(libAuthDir, "helpers.ts"), authHelpersTemplate);
-    
+
+    // Create JWT session management
+    const sessionTemplate = createJwtSessionTemplate();
+    await fs.writeFile(path.join(libAuthDir, "session.ts"), sessionTemplate);
+
+    // Create auth middleware utilities
+    const middlewareTemplate = createAuthMiddlewareTemplate();
+    await fs.writeFile(path.join(libAuthDir, "middleware.ts"), middlewareTemplate);
+
     console.error(`[STEP 4/7] ✅ Completed: ${step4}`);
 
     // Step 5: Create validation schemas
@@ -207,7 +215,7 @@ export async function setupAuthenticationJwt(config: AuthenticationJwtConfig): P
     await fs.writeFile(path.join(authComponentsDir, "auth-button.tsx"), authButtonTemplate);
     
     // Create auth components index
-    const authIndexTemplate = `export { SignInForm } from './signin-form.js';\nexport { SignupForm } from './signup-form.js';\nexport { AuthButton } from './auth-button.js';\n`;
+    const authIndexTemplate = `export { SignInForm } from './signin-form';\nexport { SignupForm } from './signup-form';\nexport { AuthButton } from './auth-button';\n`;
     await fs.writeFile(path.join(authComponentsDir, "index.ts"), authIndexTemplate);
     
     console.error(`[STEP 7/7] ✅ Completed: ${step7}`);
@@ -397,10 +405,10 @@ function createSignInFormTemplate(): string {
 'use client';
 
 import { useFormState } from 'react-dom';
-import { signInAction } from '@/actions/auth.js';
+import { loginAction } from '@/actions/auth';
 
 export function SignInForm() {
-  const [state, formAction] = useFormState(signInAction, {});
+  const [state, formAction] = useFormState(loginAction, {});
 
   return (
     <div className="mx-auto max-w-sm space-y-6">
@@ -473,7 +481,7 @@ function createAuthButtonTemplate(): string {
  */
 
 import { auth } from '@/auth';
-import { signOutAction } from '@/actions/auth.js';
+import { logoutAction } from '@/actions/auth';
 
 export async function AuthButton() {
   const session = await auth();
@@ -484,7 +492,7 @@ export async function AuthButton() {
         <span className="text-sm text-muted-foreground">
           {session.user.email}
         </span>
-        <form action={signOutAction}>
+        <form action={logoutAction}>
           <button
             type="submit"
             className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 px-3"
@@ -908,7 +916,7 @@ function createAuthMiddlewareTemplate(): string {
  */
 
 import { z } from 'zod';
-import { getUser } from './session.js';
+import { getUser } from './session';
 import { redirect } from 'next/navigation';
 
 export type ActionState = {
@@ -1103,8 +1111,8 @@ function createUserQueriesTemplate(): string {
  */
 
 import { eq } from 'drizzle-orm';
-import { db } from './index.js';
-import { userTable, type User, type NewUser, type PublicUser } from '../../models/user.js';
+import { db } from './index';
+import { userTable, type User, type NewUser, type PublicUser } from '../../models/user';
 
 /**
  * Create a new user
@@ -1230,6 +1238,8 @@ function createAuthActionsTemplate(hasDatabase: boolean, hasPasswordHashing: boo
  * @fileoverview Authentication Server Actions
  * @description Server actions for login, signup, and user management
  */
+
+'use server';
 
 import { createSession, setSessionCookie, clearSession } from '@/libs/auth/session';
 import { validatedAction, validatedActionWithUser } from '@/libs/auth/middleware';
@@ -1385,7 +1395,7 @@ function createLoginFormTemplate(): string {
 import { useFormState } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
-import { loginAction } from '@/actions/auth.js';
+import { loginAction } from '@/actions/auth';
 
 export function LoginForm() {
   const [state, formAction] = useFormState(loginAction, {});
@@ -1479,7 +1489,7 @@ function createSignupFormTemplate(): string {
 import { useFormState } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
-import { signupAction } from '@/actions/auth.js';
+import { signupAction } from '@/actions/auth';
 
 export function SignupForm() {
   const [state, formAction] = useFormState(signupAction, {});

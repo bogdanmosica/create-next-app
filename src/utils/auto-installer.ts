@@ -32,12 +32,12 @@ export const packageConfigs: Record<string, PackageGroup> = {
   },
   
   drizzle_orm: {
-    dependencies: ["drizzle-orm", "@neondatabase/serverless", "ws"],
+    dependencies: ["drizzle-orm", "drizzle-zod", "@neondatabase/serverless", "ws"],
     devDependencies: ["drizzle-kit"]
   },
   
   authentication_jwt: {
-    dependencies: ["bcryptjs", "jose", "zod"],
+    dependencies: ["next-auth@beta", "zod", "@auth/drizzle-adapter", "bcryptjs"],
     devDependencies: ["@types/bcryptjs"]
   },
   

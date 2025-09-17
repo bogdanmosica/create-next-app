@@ -349,13 +349,13 @@ function createPaymentUtilsTemplate(includeSubscriptions: boolean, includeOneTim
  * @description Helper functions for Stripe payment operations
  */
 
-import { stripe } from './stripe.js';
+import { stripe } from './stripe';
 import type { 
   CreateSubscriptionParams, 
   CreateCheckoutParams, 
   StripeCustomerData,
   PaymentError 
-} from '@/types/payments.js';
+} from '@/types/payments';
 
 /**
  * Create or retrieve a Stripe customer
@@ -589,12 +589,14 @@ export function validateWebhookSignature(
 }
 
 function createPaymentActionsTemplate(includeSubscriptions: boolean, includeOneTime: boolean, hasAuth: boolean): string {
-  const authImports = hasAuth ? `import { requireAuth } from '@/libs/auth/session.js';` : '';
+  const authImports = hasAuth ? `import { requireAuth } from '@/libs/auth/session';` : '';
   
   return `/**
  * @fileoverview Payment Server Actions
  * @description Server actions for Stripe payment operations
  */
+
+'use server';
 
 import { redirect } from 'next/navigation';
 ${authImports}
@@ -604,12 +606,12 @@ import {
   ${includeOneTime ? 'createOneTimeCheckoutSession,' : ''}
   ${includeSubscriptions ? 'createCustomerPortalSession,' : ''}
   parseStripeError 
-} from '@/libs/payments/utils.js';
+} from '@/libs/payments/utils';
 import type { 
   ${includeSubscriptions ? 'CreateSubscriptionParams,' : ''}
   ${includeOneTime ? 'CreateCheckoutParams,' : ''}
   PaymentActionResult 
-} from '@/types/payments.js';
+} from '@/types/payments';
 
 ${includeSubscriptions ? `
 /**
@@ -775,7 +777,7 @@ export async function redirectToCheckout(formData: FormData) {
   if (result.success && result.url) {
     redirect(result.url);
   } else {
-    throw new Error(result.error || 'Payment setup failed');
+    throw new Error(result.error || 'Payment setup failed';
   }
 }
 
@@ -806,7 +808,7 @@ function createSubscriptionModelTemplate(): string {
 
 import { pgTable, serial, varchar, text, timestamp, boolean, integer } from 'drizzle-orm/pg-core';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
-import { userTable } from './user.js';
+import { userTable } from './user';
 
 export const subscriptionTable = pgTable('subscriptions', {
   id: serial('id').primaryKey(),
@@ -840,8 +842,8 @@ function createSubscriptionQueriesTemplate(): string {
  */
 
 import { eq, and } from 'drizzle-orm';
-import { db } from './index.js';
-import { subscriptionTable, type Subscription, type NewSubscription } from '../../models/subscription.js';
+import { db } from './index';
+import { subscriptionTable, type Subscription, type NewSubscription } from '../../models/subscription';
 
 /**
  * Create a new subscription record
@@ -959,9 +961,9 @@ function createPricingTableTemplate(): string {
 'use client';
 
 import { useState } from 'react';
-import { redirectToCheckout } from '@/actions/payments.js';
-import { formatPrice } from '@/libs/payments/utils.js';
-import type { PricingTableProps } from '@/types/payments.js';
+import { redirectToCheckout } from '@/actions/payments';
+import { formatPrice } from '@/libs/payments/utils';
+import type { PricingTableProps } from '@/types/payments';
 
 export function PricingTable({ 
   plans, 
@@ -980,7 +982,7 @@ export function PricingTable({
       await redirectToCheckout(formData);
     } catch (error) {
       console.error('Subscription error:', error);
-      alert('Failed to start subscription. Please try again.');
+      alert('Failed to start subscription. Please try again.';
     } finally {
       setLoading(null);
     }
@@ -1088,8 +1090,8 @@ function createCheckoutButtonTemplate(): string {
 'use client';
 
 import { useState } from 'react';
-import { createCheckoutSession } from '@/actions/payments.js';
-import type { CheckoutButtonProps } from '@/types/payments.js';
+import { createCheckoutSession } from '@/actions/payments';
+import type { CheckoutButtonProps } from '@/types/payments';
 
 export function CheckoutButton({
   amount,
@@ -1116,11 +1118,11 @@ export function CheckoutButton({
       if (result.success && result.url) {
         window.location.href = result.url;
       } else {
-        throw new Error(result.error || 'Checkout failed');
+        throw new Error(result.error || 'Checkout failed';
       }
     } catch (error) {
       console.error('Checkout error:', error);
-      alert('Payment failed. Please try again.');
+      alert('Payment failed. Please try again.';
     } finally {
       setLoading(false);
     }
@@ -1168,11 +1170,11 @@ function createPaymentComponentsIndex(includeSubscriptions: boolean, includeOneT
   let exports = '';
   
   if (includeSubscriptions) {
-    exports += "export { PricingTable } from './pricing-table.js';\n";
+    exports += "export { PricingTable } from './pricing-table';\n";
   }
   
   if (includeOneTime) {
-    exports += "export { CheckoutButton } from './checkout-button.js';\n";
+    exports += "export { CheckoutButton } from './checkout-button';\n";
   }
   
   return exports || "// No components exported\n";

@@ -175,7 +175,7 @@ import {
   json,
   index
 } from 'drizzle-orm/pg-core';
-import { users } from './user.js';
+import { users } from './user';
 
 // Team table
 export const teams = pgTable('teams', {
@@ -367,7 +367,7 @@ export type TeamRole = 'owner' | 'admin' | 'member';`}
   }
 
   // Add team exports if not already present
-  if (!schemaContent.includes("from './team.js'")) {
+  if (!schemaContent.includes("from './team'")) {
     const teamExports = `
 // Team management exports
 export {
@@ -386,7 +386,7 @@ export {
   type TeamRole,${options.includeRoles ? `
   TEAM_ROLES,
   hasPermission,` : ''}
-} from './team.js';
+} from './team';
 `;
     schemaContent += teamExports;
     await fs.writeFile(schemaPath, schemaContent);
@@ -399,7 +399,7 @@ async function createTeamQueries(projectPath: string, options: { includeRoles: b
  * @description Database operations for teams, members, and activity logging
  */
 
-import { db } from '@/libs/db.js';
+import { db } from '@/libs/db';
 import { eq, and, desc, count } from 'drizzle-orm';
 import { 
   teams, 
@@ -412,8 +412,8 @@ import {
   type TeamActivityLog,
   type NewTeamActivityLog,` : ''}
   type TeamRole
-} from '@/models/team.js';
-import { users } from '@/models/user.js';
+} from '@/models/team';
+import { users } from '@/models/user';
 
 // Team queries
 export async function createTeam(data: NewTeam): Promise<Team> {
@@ -563,7 +563,7 @@ export async function hasTeamPermission(
   if (!member || member.status !== 'active') return false;
 
   ${options.includeRoles ? `// Check role-based permissions
-  const { hasPermission } = await import('@/models/team.js');
+  const { hasPermission } = await import('@/models/team');
   return hasPermission(member.role as TeamRole, permission);` : `// Simple role check
   if (member.role === 'owner') return true;
   if (member.role === 'admin' && ['team:read', 'members:read', 'members:invite'].includes(permission)) return true;
@@ -782,7 +782,7 @@ async function createTeamActions(projectPath: string, options: { includeRoles: b
 'use server';
 
 import { revalidatePath, redirect } from 'next/cache';
-import { getUser } from '@/libs/auth/session.js';
+import { getUser } from '@/libs/auth/session';
 import {
   createTeam as dbCreateTeam,
   updateTeam as dbUpdateTeam,
@@ -796,7 +796,7 @@ import {
   generateTeamSlug,
   hasTeamPermission,${options.includeActivityLogs ? `
   logTeamActivity,` : ''}
-} from '@/libs/db/team-queries.js';
+} from '@/libs/db/team-queries';
 import {
   createTeamSchema,
   updateTeamSchema,
@@ -806,7 +806,7 @@ import {
   type UpdateTeamInput,
   type InviteMemberInput,
   type UpdateMemberInput,
-} from '@/validations/team.js';
+} from '@/validations/team';
 
 // Team actions
 export async function createTeamAction(data: CreateTeamInput) {
